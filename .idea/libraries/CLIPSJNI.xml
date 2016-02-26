@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="CLIPSJNI">
+    <CLASSES />
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://D:/Program Files (x86)/CLIPS/CLIPSJNI/java-src" />
+    </SOURCES>
+    <excluded>
+      <root url="file://D:/Program Files (x86)/CLIPS/CLIPSJNI/java-src/net/sf/clipsrules/jni/examples" />
+    </excluded>
+  </library>
+</component>
