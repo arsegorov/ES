@@ -8,5 +8,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" scope="PROVIDED" name="CLIPSJNI" level="project" />
+    <orderEntry type="library" name="csv" level="project" />
   </component>
 </module>

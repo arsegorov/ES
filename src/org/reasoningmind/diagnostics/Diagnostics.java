@@ -3,15 +3,38 @@
  */
 package org.reasoningmind.diagnostics;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import java.awt.*;
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
 import java.io.File;
+
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+
+//import net.sf.clipsrules.jni.*;
+
+//import org.apache.commons.csv.CSVParser;
+//import org.apache.commons.csv.CSVFormat;
+//import java.nio.charset.StandardCharsets;
+
+//import java.sql.Connection;
+//import java.sql.DriverManager;
+//import java.sql.PreparedStatement;
+//import java.sql.ResultSet;
+//import java.sql.Statement;
 
 public class Diagnostics implements ActionListener {
     JFrame mainWindow;
@@ -19,6 +42,8 @@ public class Diagnostics implements ActionListener {
     JTextField filePathText;
 
     ResourceBundle resources;
+
+//    Environment clips;
 
     final JFileChooser fileChooser = new JFileChooser();
 
@@ -35,20 +60,18 @@ public class Diagnostics implements ActionListener {
         mainWindow.getContentPane().setLayout(new BorderLayout());
         mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        JPanel input = new JPanel(new FlowLayout());
+        FileNameExtensionFilter fnef = new FileNameExtensionFilter("Comma Separated Values (.csv)", "csv");
+        fileChooser.setFileFilter(fnef);
 
         filePathText = new JTextField("...");
         filePathText.setPreferredSize(new Dimension(500, 24));
-        input.add(filePathText);
-
         browseButton = new JButton("Browse");
-        browseButton.setPreferredSize(new Dimension(100, 30));
-        input.add(browseButton);
         browseButton.addActionListener(this);
 
-        FileNameExtensionFilter fnef = new FileNameExtensionFilter("Text files", "txt");
-        fileChooser.setFileFilter(fnef);
-
+        JPanel input = new JPanel(new FlowLayout());
+        input.add(filePathText);
+        input.add(browseButton);
+        input.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"Select a file to read student data from"));
         mainWindow.add(input, BorderLayout.CENTER);
 
         mainWindow.pack();
@@ -56,11 +79,11 @@ public class Diagnostics implements ActionListener {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(
-                new Runnable()
-                {
-                    public void run() { new Diagnostics(); }
-                }
+        SwingUtilities.invokeLater(new Runnable() {
+                                       public void run() {
+                                           new Diagnostics();
+                                       }
+                                   }
         );
     }
 
