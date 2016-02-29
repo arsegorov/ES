@@ -9,5 +9,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" scope="PROVIDED" name="CLIPSJNI" level="project" />
     <orderEntry type="library" name="csv" level="project" />
+    <orderEntry type="library" name="sqlite-jdbc-3.8.11.2" level="project" />
   </component>
 </module>
