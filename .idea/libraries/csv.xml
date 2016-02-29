@@ -2,13 +2,17 @@
   <library name="csv">
     <CLASSES>
       <root url="file://D:/Program Files/Java/commons-csv-1.2" />
+      <root url="file://C:/Program Files/Java/commons-csv-1.2" />
     </CLASSES>
     <JAVADOC>
       <root url="file://D:/Program Files/Java/commons-csv-1.2/apidocs" />
+      <root url="file://C:/Program Files/Java/commons-csv-1.2/apidocs" />
     </JAVADOC>
     <SOURCES>
       <root url="file://D:/Program Files/Java/commons-csv-1.2/src/main/java" />
+      <root url="file://C:/Program Files/Java/commons-csv-1.2/src/main/java" />
     </SOURCES>
+    <jarDirectory url="file://C:/Program Files/Java/commons-csv-1.2" recursive="false" />
     <jarDirectory url="file://D:/Program Files/Java/commons-csv-1.2" recursive="false" />
   </library>
 </component>
