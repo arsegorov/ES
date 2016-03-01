@@ -17,15 +17,19 @@ import java.sql.Statement;
 /**
  * This class handles operations with the student data.
  */
-public class StudentData {
+public class StudentDataManager {
     Diagnostics hostApp;
     Connection connection;
 
-    StudentData(Diagnostics hostApp) {
+    StudentDataManager(Diagnostics hostApp) {
         this.hostApp = hostApp;
     }
 
     void readCSV(File csv) {
+
+    }
+
+    void readCLP(File clp) {
 
     }
 
@@ -61,13 +65,20 @@ public class StudentData {
             }
             rs.close();
             connection.close();
+        }
+        catch (ClassNotFoundException classNotFoundException) {
+            JOptionPane.showMessageDialog(
+                    hostApp.getMainWindow(),
+                    "Class \"org.sqlite.JDBC\" is not found.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
 
-            throw new Exception("Sample exception");
-        } catch (ClassNotFoundException classNotFoundException) {
-            JOptionPane.showMessageDialog(hostApp.getMainWindow(), "Class \"org.sqlite.JDBC\" is not found.", "Error", JOptionPane.ERROR_MESSAGE);
-
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(hostApp.getMainWindow(), e.getClass().getName() + " in StudentData.dbConnectionTest(): " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+        catch (Exception e) {
+            JOptionPane.showMessageDialog(hostApp.getMainWindow(),
+                    e.getClass().getName() + " in StudentDataManager.dbConnectionTest(): " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 }
