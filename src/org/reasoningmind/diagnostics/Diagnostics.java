@@ -3,265 +3,248 @@
  */
 package org.reasoningmind.diagnostics;
 
-import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
-import javax.swing.filechooser.FileNameExtensionFilter;
-
-import java.awt.BorderLayout;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
-import java.io.File;
-
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-
 import net.sf.clipsrules.jni.Environment;
 import net.sf.clipsrules.jni.MultifieldValue;
 import net.sf.clipsrules.jni.PrimitiveValue;
+
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.util.Locale;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 
 /**
  * This is the main class of the diagnostics application.
  * It provides user interface and an interface with the CLIPS system.
  */
 public class Diagnostics implements ActionListener {
-    //
-    // Parts of user interface
-    //
-    JFrame mainWindow;
+	//
+	// Data handlers
+	// Need only one of each for the life of the application
+	//
+	final JFileChooser fileChooser = new JFileChooser();
+	//
+	// Parts of user interface
+	//
+	JFrame mainWindow;
+	JTextField filePathTF;
+	JTextArea outputArea;
 
-    public JFrame getMainWindow() {
-        return mainWindow;
-    }
+	//
+	// Text resources
+	//
+	ResourceBundle resources;
 
-    JTextField filePathTF;
-    JTextArea outputArea;
+	//
+	// CLIPS execution related fields
+	//
+	/**
+	 * Make sure to specify -Djava.library.path="&lt;path to CLIPSJNI directory&gt;."
+	 * This is where the CLIPSJNI.dll is.
+	 * In IntelliJ Idea, the option is specified under VM Options in "Run/Debug Configurations"
+	 */
+	Environment clips;
+	boolean isExecuting = false;
+	Thread executionThread;
 
-    //
-    // Text resources
-    //
-    ResourceBundle resources;
+	Diagnostics() {
+		//
+		// Accessing the resources file
+		//
+		try {
+			resources = ResourceBundle.getBundle(
+					"org.reasoningmind.diagnostics.resources.Diagnostics",
+					Locale.getDefault()
+			);
+		} catch (MissingResourceException mre) {
+			mre.printStackTrace();
+			return;
+		}
 
-    //
-    // CLIPS execution related fields
-    //
-    /**
-     * Make sure to specify -Djava.library.path="&lt;path to CLIPSJNI directory&gt;."
-     * This is where the CLIPSJNI.dll is.
-     * In IntelliJ Idea, the option is specified under VM Options in "Run/Debug Configurations"
-     */
-    Environment clips;
-    boolean isExecuting = false;
-    Thread executionThread;
+		// ************************** //
+		// Setting up the main window //
+		// ************************** //
+		mainWindow = new JFrame(resources.getString("MainWindowTitle"));
+		mainWindow.getContentPane().setLayout(new BorderLayout());
+		mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-    //
-    // Data handlers
-    // Need only one of each for the life of the application
-    //
-    final JFileChooser fileChooser = new JFileChooser();
-//    final StudentDataManager sdm = new StudentDataManager(this);
+		JPanel topPanel = new JPanel(new FlowLayout());
 
+		//
+		// A cheerful image on the main window :)
+		//
+		JLabel hintLabel = new JLabel();
+		hintLabel.setIcon(
+				new ImageIcon(
+						getClass().getClassLoader()
+								.getResource("org/reasoningmind/diagnostics/resources/data_input_label.png")
+				)
+		);
+		topPanel.add(hintLabel);
 
-    Diagnostics() {
-        //
-        // Accessing the resources file
-        //
-        try {
-            resources = ResourceBundle.getBundle(
-                    "org.reasoningmind.diagnostics.resources.Diagnostics",
-                    Locale.getDefault()
-            );
-        }
-        catch (MissingResourceException mre) {
-            mre.printStackTrace();
-            return;
-        }
+		// ***************** //
+		// The log text area //
+		// ***************** //
+		outputArea = new JTextArea();
+		JScrollPane scrPane = new JScrollPane(outputArea);
+		outputArea.setFont(Font.decode("Consolas-Plain-12"));
+		outputArea.setColumns(80);
+		outputArea.setRows(25);
+		outputArea.setEditable(false);
+		outputArea.setLineWrap(true);
+		outputArea.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
+		topPanel.add(scrPane);
 
-        // ************************** //
-        // Setting up the main window //
-        // ************************** //
-        mainWindow = new JFrame(resources.getString("MainWindowTitle"));
-        mainWindow.getContentPane().setLayout(new BorderLayout());
-        mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		mainWindow.add(topPanel, BorderLayout.NORTH);
 
-        JPanel topPanel = new JPanel(new FlowLayout());
+		// *********************** //
+		// The file selection area //
+		// *********************** //
+		JPanel fileSelectionPanel = new JPanel(new FlowLayout());
+		fileSelectionPanel.setBorder(BorderFactory.createTitledBorder(
+				BorderFactory.createEtchedBorder(),
+				"Select a file to read student data from"
+		));
 
-        //
-        // A cheerful image on the main window :)
-        //
-        JLabel hintLabel = new JLabel();
-        hintLabel.setIcon(
-                new ImageIcon(
-                        getClass().getClassLoader()
-                                .getResource("org/reasoningmind/diagnostics/resources/data_input_label.png")
-                )
-        );
-        topPanel.add(hintLabel);
+		// File path text field
+		filePathTF = new JTextField("");
+		filePathTF.setPreferredSize(new Dimension(500, 24));
+		fileSelectionPanel.add(filePathTF);
 
-        // ***************** //
-        // The log text area //
-        // ***************** //
-        outputArea = new JTextArea();
-        JScrollPane scrPane = new JScrollPane(outputArea);
-        outputArea.setFont(Font.decode("Consolas-Plain-12"));
-        outputArea.setColumns(80);
-        outputArea.setRows(25);
-        outputArea.setEditable(false);
-        outputArea.setLineWrap(true);
-        outputArea.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
-        topPanel.add(scrPane);
+		// File chooser button, opens the file chooser
+		JButton browseButton = new JButton("Browse");
+		browseButton.setActionCommand("BrowseCLP");
+		browseButton.addActionListener(this);
+		fileSelectionPanel.add(browseButton);
 
-        mainWindow.add(topPanel, BorderLayout.NORTH);
+		// Load button, tells CLIPS to load a file
+		JButton loadButton = new JButton("Load");
+		loadButton.setActionCommand("LoadCLP");
+		loadButton.addActionListener(this);
+		fileSelectionPanel.add(loadButton);
 
-        // *********************** //
-        // The file selection area //
-        // *********************** //
-        JPanel fileSelectionPanel = new JPanel(new FlowLayout());
-        fileSelectionPanel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createEtchedBorder(),
-                "Select a file to read student data from"
-        ));
+		mainWindow.add(fileSelectionPanel, BorderLayout.CENTER);
 
-        // File path text field
-        filePathTF = new JTextField("");
-        filePathTF.setPreferredSize(new Dimension(500, 24));
-        fileSelectionPanel.add(filePathTF);
+		mainWindow.pack();
+		mainWindow.setLocation(300, 200);
+		mainWindow.setVisible(true);
 
-        // File chooser button, opens the file chooser
-        JButton browseButton = new JButton("Browse");
-        browseButton.setActionCommand("BrowseCLP");
-        browseButton.addActionListener(this);
-        fileSelectionPanel.add(browseButton);
+		FileNameExtensionFilter fnef = new FileNameExtensionFilter(
+				resources.getString("CLIPSFile"),
+				resources.getString("CLIPSFileExt")
+		);
+		fileChooser.setFileFilter(fnef);
 
-        // Load button, tells CLIPS to load a file
-        JButton loadButton = new JButton("Load");
-        loadButton.setActionCommand("LoadCLP");
-        loadButton.addActionListener(this);
-        fileSelectionPanel.add(loadButton);
-
-        mainWindow.add(fileSelectionPanel, BorderLayout.CENTER);
-
-        mainWindow.pack();
-        mainWindow.setLocation(300, 200);
-        mainWindow.setVisible(true);
-
-        FileNameExtensionFilter fnef = new FileNameExtensionFilter(
-                resources.getString("CLIPSFile"),
-                resources.getString("CLIPSFileExt")
-        );
-        fileChooser.setFileFilter(fnef);
-
-        // Uncomment this to test the database setup
+		// Uncomment this to test the database setup
 //        sdm.dbConnectionTest();
 
-        clips = new Environment();
-        outputArea.append(clips.getVersion() + "\n\nCLIPS> ");
-        clips.watch("rules");
-        clips.loadFromResource("/org/reasoningmind/diagnostics/resources/defs.clp");
-        clips.loadFromResource("/org/reasoningmind/diagnostics/resources/rules.clp");
-    }
+		clips = new Environment();
+		outputArea.append(clips.getVersion() + "\n\nCLIPS> ");
+		clips.watch("rules");
+		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/defs.clp");
+		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/rules.clp");
+	}
+//    final StudentDataManager sdm = new StudentDataManager(this);
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(
-                new Runnable() {
-                    public void run() {
-                        new Diagnostics();
-                    }
-                }
-        );
-    }
+	public static void main(String[] args) {
+		SwingUtilities.invokeLater(
+				new Runnable() {
+					public void run() {
+						new Diagnostics();
+					}
+				}
+		);
+	}
 
-    /**
-     * Passes the expression onto the Environment.eval(String) method and displays the result in the <a href="#outputArea">output area</a>.
-     * @param expression the CLIPS command to pass onto the net.sf.clipsrules.jni.Environment.eval(String) method
-     * @return the result of the Environment.eval(String) method
-     */
-    PrimitiveValue eval(String expression) {
-        PrimitiveValue res = clips.eval(expression);
+	public JFrame getMainWindow() {
+		return mainWindow;
+	}
 
-        if(res.getClass().getSimpleName().equals("MultifieldValue")) {
-            MultifieldValue mv = (MultifieldValue) res;
+	/**
+	 * Passes the <code>expression</code> onto the <code><b>net.sf.clipsrules.jni.Environment.eval</b>(String)</code> method and displays
+	 * the result in the <a
+	 * href="#outputArea">output area</a>.
+	 *
+	 * @param expression
+	 * 		the CLIPS expression to pass onto the <code><b>Environment.eval</b>(String)</code> method
+	 *
+	 * @return the result of the <code><b>Environment.eval</b>(String)</code> method
+	 *
+	 * @see net.sf.clipsrules.jni.Environment#eval(String)
+	 */
+	PrimitiveValue eval(String expression) {
+		PrimitiveValue res = clips.eval(expression);
 
-            outputArea.append(expression + "\n");
-            for (int i = 0; i < mv.size(); i++) {
-                outputArea.append(mv.get(i).toString() +"\n");
-            }
+		if (res.getClass().getSimpleName().equals("MultifieldValue")) {
+			MultifieldValue mv = (MultifieldValue) res;
 
-            outputArea.append("CLIPS> ");
-        }
-        else if (res.getClass().getSimpleName().equals("VoidValue")) {
-            outputArea.append(expression + "\n/* Void Value */\nCLIPS> ");
-        }
-        else {
-            outputArea.append(expression + "\n" + res.toString() + "\nCLIPS> ");
-        }
+			outputArea.append(expression + "\n");
+			for (int i = 0; i < mv.size(); i++) {
+				outputArea.append(mv.get(i).toString() + "\n");
+			}
 
-        return res;
-    }
+			outputArea.append("CLIPS> ");
+		} else if (res.getClass().getSimpleName().equals("VoidValue")) {
+			outputArea.append(expression + "\n/* Void Value */\nCLIPS> ");
+		} else {
+			outputArea.append(expression + "\n" + res.toString() + "\nCLIPS> ");
+		}
 
-    public void runDiagnostics() {
-        Runnable runThread =
-                new Runnable() {
-                    public void run() {
-                        clips.run();
+		return res;
+	}
 
-                        SwingUtilities.invokeLater(
-                                new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        isExecuting = false;
-                                        mainWindow.setCursor(Cursor.getDefaultCursor());
-                                    }
-                                }
-                        );
-                    }
-                };
+	public void runDiagnostics() {
+		Runnable runThread =
+				new Runnable() {
+					public void run() {
+						clips.run();
 
-        isExecuting = true;
-        executionThread = new Thread(runThread);
-        mainWindow.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        executionThread.start();
-    }
+						SwingUtilities.invokeLater(
+								new Runnable() {
+									@Override
+									public void run() {
+										isExecuting = false;
+										mainWindow.setCursor(Cursor.getDefaultCursor());
+									}
+								}
+						);
+					}
+				};
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if(isExecuting) {
-            return;
-        }
+		isExecuting = true;
+		executionThread = new Thread(runThread);
+		mainWindow.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		executionThread.start();
+	}
 
-        if (e.getActionCommand().equals("BrowseCLP")) {
-            int returnVal = fileChooser.showOpenDialog(mainWindow);
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		if (isExecuting) {
+			return;
+		}
 
-            if (returnVal == JFileChooser.APPROVE_OPTION) {
-                File file = fileChooser.getSelectedFile();
-                filePathTF.setText(file.getPath());
-            } else {
-                filePathTF.setText("");
-            }
-        }
-        else if (e.getActionCommand().equals("LoadCLP")) {
-            File file = new File(filePathTF.getText());
+		if (e.getActionCommand().equals("BrowseCLP")) {
+			int returnVal = fileChooser.showOpenDialog(mainWindow);
 
-            if (file.exists()) {
-                eval("(load \"" + filePathTF.getText().replace("\\", "\\\\") + "\")");
-                clips.reset();
+			if (returnVal == JFileChooser.APPROVE_OPTION) {
+				File file = fileChooser.getSelectedFile();
+				filePathTF.setText(file.getPath());
+			} else {
+				filePathTF.setText("");
+			}
+		} else if (e.getActionCommand().equals("LoadCLP")) {
+			File file = new File(filePathTF.getText());
 
-                runDiagnostics();
-            }
-        }
-    }
+			if (file.exists()) {
+				eval("(load \"" + filePathTF.getText().replace("\\", "\\\\") + "\")");
+				clips.reset();
+
+				runDiagnostics();
+			}
+		}
+	}
 }
