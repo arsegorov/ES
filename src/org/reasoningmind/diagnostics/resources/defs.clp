@@ -23,7 +23,7 @@
 	(slot accounted-for
 		(type INTEGER)
 		(allowed-integers 0 1)
-		(default ?DERIVE)))
+		(default 0)))
 
 ;*****************************************************************;
 ; A fact of this type stores the information about a single skill ;
