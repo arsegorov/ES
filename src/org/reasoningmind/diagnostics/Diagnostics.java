@@ -31,7 +31,7 @@ public class Diagnostics implements ActionListener {
 	// Parts of user interface
 	//
 	JFrame mainWindow;
-	JTextField filePathTF;
+	JTextField filePathTF, clipsCommandTF;
 	JTextArea outputArea;
 
 	//
@@ -72,7 +72,8 @@ public class Diagnostics implements ActionListener {
 		mainWindow.getContentPane().setLayout(new BorderLayout());
 		mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		JPanel topPanel = new JPanel(new FlowLayout());
+		JPanel topPanel = new JPanel(new BorderLayout());
+		topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 0));
 
 		//
 		// A cheerful image on the main window :)
@@ -84,27 +85,46 @@ public class Diagnostics implements ActionListener {
 								.getResource("org/reasoningmind/diagnostics/resources/data_input_label.png")
 				)
 		);
-		topPanel.add(hintLabel);
+		topPanel.add(hintLabel, BorderLayout.WEST);
 
 		// ***************** //
 		// The log text area //
 		// ***************** //
 		outputArea = new JTextArea();
-		JScrollPane scrPane = new JScrollPane(outputArea);
 		outputArea.setFont(Font.decode("Consolas-Plain-12"));
 		outputArea.setColumns(80);
-		outputArea.setRows(25);
 		outputArea.setEditable(false);
 		outputArea.setLineWrap(true);
 		outputArea.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
-		topPanel.add(scrPane);
+		JScrollPane scrPane = new JScrollPane(outputArea);
 
-		mainWindow.add(topPanel, BorderLayout.NORTH);
+		// **************************** //
+		// The "command line interface" //
+		// **************************** //
+		clipsCommandTF = new JTextField("");
+		clipsCommandTF.setPreferredSize(new Dimension(outputArea.getWidth(), 24));
+		clipsCommandTF.setFont(Font.decode("Consolas-Plain-12"));
+		clipsCommandTF.addActionListener(this);
+
+		JPanel promptPanel = new JPanel(new BorderLayout());
+		promptPanel.setBorder(BorderFactory.createTitledBorder(
+				BorderFactory.createEtchedBorder(),
+				"Enter a CLIPS expression to evaluate"
+		));
+		promptPanel.add(clipsCommandTF, BorderLayout.CENTER);
+
+		JPanel rightPanel = new JPanel(new BorderLayout());
+		rightPanel.add(scrPane, BorderLayout.CENTER);
+		rightPanel.add(promptPanel, BorderLayout.SOUTH);
+
+		topPanel.add(rightPanel, BorderLayout.CENTER);
+
+		mainWindow.add(topPanel, BorderLayout.CENTER);
 
 		// *********************** //
 		// The file selection area //
 		// *********************** //
-		JPanel fileSelectionPanel = new JPanel(new FlowLayout());
+		JPanel fileSelectionPanel = new JPanel(new BorderLayout());
 		fileSelectionPanel.setBorder(BorderFactory.createTitledBorder(
 				BorderFactory.createEtchedBorder(),
 				"Select a file to read student data from"
@@ -112,22 +132,26 @@ public class Diagnostics implements ActionListener {
 
 		// File path text field
 		filePathTF = new JTextField("");
-		filePathTF.setPreferredSize(new Dimension(500, 24));
-		fileSelectionPanel.add(filePathTF);
+		filePathTF.setPreferredSize(new Dimension(topPanel.getWidth(), 24));
+		filePathTF.addActionListener(this);
+		fileSelectionPanel.add(filePathTF, BorderLayout.CENTER);
+
+		JPanel buttonPanel = new JPanel(new GridLayout(1, 2));
+		fileSelectionPanel.add(buttonPanel, BorderLayout.EAST);
 
 		// File chooser button, opens the file chooser
 		JButton browseButton = new JButton("Browse");
 		browseButton.setActionCommand("BrowseCLP");
 		browseButton.addActionListener(this);
-		fileSelectionPanel.add(browseButton);
+		buttonPanel.add(browseButton);
 
 		// Load button, tells CLIPS to load a file
 		JButton loadButton = new JButton("Load");
 		loadButton.setActionCommand("LoadCLP");
 		loadButton.addActionListener(this);
-		fileSelectionPanel.add(loadButton);
+		buttonPanel.add(loadButton);
 
-		mainWindow.add(fileSelectionPanel, BorderLayout.CENTER);
+		mainWindow.add(fileSelectionPanel, BorderLayout.NORTH);
 
 		mainWindow.pack();
 		mainWindow.setLocation(300, 200);
@@ -182,16 +206,16 @@ public class Diagnostics implements ActionListener {
 		if (res.getClass().getSimpleName().equals("MultifieldValue")) {
 			MultifieldValue mv = (MultifieldValue) res;
 
-			outputArea.append(expression + "\n");
+			outputArea.append(expression + "\n\n");
 			for (int i = 0; i < mv.size(); i++) {
 				outputArea.append(mv.get(i).toString() + "\n");
 			}
 
-			outputArea.append("CLIPS> ");
+			outputArea.append("\nCLIPS> ");
 		} else if (res.getClass().getSimpleName().equals("VoidValue")) {
-			outputArea.append(expression + "\n/* Void Value */\nCLIPS> ");
+			outputArea.append(expression + "\n\n/* Void Value */\n\nCLIPS> ");
 		} else {
-			outputArea.append(expression + "\n" + res.toString() + "\nCLIPS> ");
+			outputArea.append(expression + "\n\n" + res.toString() + "\n\nCLIPS> ");
 		}
 
 		return res;
@@ -232,19 +256,32 @@ public class Diagnostics implements ActionListener {
 
 			if (returnVal == JFileChooser.APPROVE_OPTION) {
 				File file = fileChooser.getSelectedFile();
-				filePathTF.setText(file.getPath());
-			} else {
-				filePathTF.setText("");
+
+				eval("(load \"" + file.getPath().replace("\\", "\\\\") + "\")");
+				clips.reset();
+
+//				runDiagnostics();
 			}
-		} else if (e.getActionCommand().equals("LoadCLP")) {
+		} else if (e.getActionCommand().equals("LoadCLP") || e.getSource() == filePathTF) {
 			File file = new File(filePathTF.getText());
 
 			if (file.exists()) {
 				eval("(load \"" + filePathTF.getText().replace("\\", "\\\\") + "\")");
 				clips.reset();
 
-				runDiagnostics();
+//				runDiagnostics();
 			}
+			else {
+				JOptionPane.showMessageDialog(mainWindow,
+						"Specified file doesn't exist.",
+						"Error",
+						JOptionPane.ERROR_MESSAGE);
+			}
+		}
+		else if(e.getSource() == clipsCommandTF) {
+			eval(clipsCommandTF.getText().replace("\\", "\\\\"));
+			clipsCommandTF.setText("");
+			clips.printBanner();
 		}
 	}
 }
