@@ -31,23 +31,31 @@ public class Diagnostics implements ActionListener {
 	// Parts of user interface
 	//
 	JFrame mainWindow;
-	JTextField filePathTF, clipsCommandTF;
+	JTextField filePathTF, clipsCommandTF, factFilterTF;
 	JTextArea outputArea;
 
 	//
 	// Text resources
 	//
 	ResourceBundle resources;
+	public ResourceBundle getResources() {
+		return resources;
+	}
 
 	//
 	// CLIPS execution related fields
 	//
+
 	/**
 	 * Make sure to specify -Djava.library.path="&lt;path to CLIPSJNI directory&gt;."
 	 * This is where the CLIPSJNI.dll is.
 	 * In IntelliJ Idea, the option is specified under VM Options in "Run/Debug Configurations"
 	 */
 	Environment clips;
+	public Environment getClips() {
+		return clips;
+	}
+
 	boolean isExecuting = false;
 	Thread executionThread;
 
@@ -73,7 +81,7 @@ public class Diagnostics implements ActionListener {
 		mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		JPanel topPanel = new JPanel(new BorderLayout());
-		topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 0));
+		topPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 
 		//
 		// A cheerful image on the main window :)
@@ -97,6 +105,7 @@ public class Diagnostics implements ActionListener {
 		outputArea.setLineWrap(true);
 		outputArea.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
 		JScrollPane scrPane = new JScrollPane(outputArea);
+		outputArea.setAutoscrolls(true);
 
 		// **************************** //
 		// The "command line interface" //
@@ -152,6 +161,29 @@ public class Diagnostics implements ActionListener {
 		buttonPanel.add(loadButton);
 
 		mainWindow.add(fileSelectionPanel, BorderLayout.NORTH);
+
+		// ****************** //
+		// The filtering line //
+		// ****************** //
+		JPanel filterPanel = new JPanel(new BorderLayout());
+		filterPanel.setBorder(BorderFactory.createTitledBorder(
+				BorderFactory.createEtchedBorder(),
+				"Enter a fact filtering string (use \"?fact\" as the variable)"
+		));
+
+		// ... text field
+		factFilterTF = new JTextField("");
+		factFilterTF.setPreferredSize(new Dimension(topPanel.getWidth(), 24));
+		factFilterTF.addActionListener(this);
+		filterPanel.add(factFilterTF, BorderLayout.CENTER);
+
+		// ... button
+		JButton showFacts = new JButton("Show Facts");
+		showFacts.setActionCommand("ShowFacts");
+		showFacts.addActionListener(this);
+		filterPanel.add(showFacts, BorderLayout.EAST);
+
+		mainWindow.add(filterPanel, BorderLayout.SOUTH);
 
 		mainWindow.pack();
 		mainWindow.setLocation(300, 200);
@@ -277,6 +309,9 @@ public class Diagnostics implements ActionListener {
 						"Error",
 						JOptionPane.ERROR_MESSAGE);
 			}
+		}
+		else if (e.getActionCommand().equals("ShowFacts") || e.getSource() == factFilterTF) {
+			new FactsFrame(this, factFilterTF.getText());
 		}
 		else if(e.getSource() == clipsCommandTF) {
 			eval(clipsCommandTF.getText().replace("\\", "\\\\"));
