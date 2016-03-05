@@ -38,6 +38,7 @@ public class Diagnostics implements ActionListener {
 	// Text resources
 	//
 	ResourceBundle resources;
+
 	public ResourceBundle getResources() {
 		return resources;
 	}
@@ -52,6 +53,7 @@ public class Diagnostics implements ActionListener {
 	 * In IntelliJ Idea, the option is specified under VM Options in "Run/Debug Configurations"
 	 */
 	Environment clips;
+
 	public Environment getClips() {
 		return clips;
 	}
@@ -221,7 +223,8 @@ public class Diagnostics implements ActionListener {
 	}
 
 	/**
-	 * Passes the <code>expression</code> onto the <code><b>net.sf.clipsrules.jni.Environment.eval</b>(String)</code> method and displays
+	 * Passes the <code>expression</code> onto the <code><b>net.sf.clipsrules.jni.Environment.eval</b>(String)</code>
+	 * method and displays
 	 * the result in the <a
 	 * href="#outputArea">output area</a>.
 	 *
@@ -244,9 +247,11 @@ public class Diagnostics implements ActionListener {
 			}
 
 			outputArea.append("\nCLIPS> ");
-		} else if (res.getClass().getSimpleName().equals("VoidValue")) {
+		}
+		else if (res.getClass().getSimpleName().equals("VoidValue")) {
 			outputArea.append(expression + "\n\n/* Void Value */\n\nCLIPS> ");
-		} else {
+		}
+		else {
 			outputArea.append(expression + "\n\n" + res.toString() + "\n\nCLIPS> ");
 		}
 
@@ -294,7 +299,8 @@ public class Diagnostics implements ActionListener {
 
 //				runDiagnostics();
 			}
-		} else if (e.getActionCommand().equals("LoadCLP") || e.getSource() == filePathTF) {
+		}
+		else if (e.getActionCommand().equals("LoadCLP") || e.getSource() == filePathTF) {
 			File file = new File(filePathTF.getText());
 
 			if (file.exists()) {
@@ -313,7 +319,7 @@ public class Diagnostics implements ActionListener {
 		else if (e.getActionCommand().equals("ShowFacts") || e.getSource() == factFilterTF) {
 			new FactsFrame(this, factFilterTF.getText());
 		}
-		else if(e.getSource() == clipsCommandTF) {
+		else if (e.getSource() == clipsCommandTF) {
 			eval(clipsCommandTF.getText().replace("\\", "\\\\"));
 			clipsCommandTF.setText("");
 			clips.printBanner();

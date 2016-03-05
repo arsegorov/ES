@@ -7,7 +7,8 @@ import net.sf.clipsrules.jni.PrimitiveValue;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.*;
+import java.util.ResourceBundle;
+import java.util.Vector;
 
 /**
  * This class is used to display a selection of facts that use a common template
@@ -28,9 +29,8 @@ public class FactsFrame extends JFrame {
 		resources = host.getResources();
 		clips = host.getClips();
 
-		this.setTitle(resources.getString("FactsFrameTitle"));
+		this.setTitle(resources.getString("FactsFrameTitle [" + filter + "]"));
 		this.setLayout(new BorderLayout());
-//		this.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 
 		MultifieldValue mv = (MultifieldValue) clips.eval("(do-for-fact " + filter + " (fact-slot-names ?fact))");
 		Vector columnHeaders = new Vector();
@@ -52,7 +52,7 @@ public class FactsFrame extends JFrame {
 					if (pv.getClass().getSimpleName().equals("MultifieldValue")) {
 						MultifieldValue mv1 = (MultifieldValue) pv;
 
-						if(mv1.size() > 0) {
+						if (mv1.size() > 0) {
 							String res = mv1.get(0).toString();
 
 							for (int k = 1; k < mv1.size(); k++) {
@@ -75,8 +75,7 @@ public class FactsFrame extends JFrame {
 
 				rows.add(row);
 			}
-		}
-		catch(Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
