@@ -29,7 +29,7 @@ public class FactsFrame extends JFrame {
 		resources = host.getResources();
 		clips = host.getClips();
 
-		this.setTitle(resources.getString("FactsFrameTitle [" + filter + "]"));
+		this.setTitle(resources.getString("FactsFrameTitle") + " [" + filter + "]");
 		this.setLayout(new BorderLayout());
 
 		MultifieldValue mv = (MultifieldValue) clips.eval("(do-for-fact " + filter + " (fact-slot-names ?fact))");
