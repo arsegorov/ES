@@ -58,18 +58,21 @@ public class StudentDataManager {
 			}
 			rs.close();
 			connection.close();
-		} catch (ClassNotFoundException classNotFoundException) {
+		}
+		catch (ClassNotFoundException classNotFoundException) {
 			JOptionPane.showMessageDialog(
-					hostApp.getMainWindow(),
+					hostApp,
 					"Class \"org.sqlite.JDBC\" is not found.",
 					"Error",
 					JOptionPane.ERROR_MESSAGE);
 
-		} catch (Exception e) {
-			JOptionPane.showMessageDialog(hostApp.getMainWindow(),
-					e.getClass().getName() + " in StudentDataManager.dbConnectionTest(): " + e.getMessage(),
-					"Error",
-					JOptionPane.ERROR_MESSAGE);
+		}
+		catch (Exception e) {
+			JOptionPane.showMessageDialog(hostApp,
+			                              e.getClass().getName() + " in StudentDataManager.dbConnectionTest(): " +
+			                              e.getMessage(),
+			                              "Error",
+			                              JOptionPane.ERROR_MESSAGE);
 		}
 	}
 }

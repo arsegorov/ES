@@ -16,9 +16,8 @@ import java.util.Vector;
 public class FactsFrame extends JFrame {
 
 	Diagnostics host;
-	//
+
 	// Text resources
-	//
 	ResourceBundle resources;
 	Environment clips;
 
@@ -29,7 +28,7 @@ public class FactsFrame extends JFrame {
 		resources = host.getResources();
 		clips = host.getClips();
 
-		this.setTitle(resources.getString("FactsFrameTitle") + " [" + filter + "]");
+		this.setTitle(resources.getString("FactsFrameTitle") + " [ " + filter + " ]");
 		this.setLayout(new BorderLayout());
 
 		MultifieldValue mv = (MultifieldValue) clips.eval("(do-for-fact " + filter + " (fact-slot-names ?fact))");
@@ -75,7 +74,8 @@ public class FactsFrame extends JFrame {
 
 				rows.add(row);
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			e.printStackTrace();
 		}
 
