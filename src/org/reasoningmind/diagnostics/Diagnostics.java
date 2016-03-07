@@ -205,8 +205,8 @@ public class Diagnostics extends JFrame implements ActionListener {
 
 
 		clips = new Environment();
-		outputArea.append(clips.getVersion() + "\n\nCLIPS> ");
-		clips.watch("rules");
+		outputArea.append(clips.getVersion() + "\n" + resources.getString("CLIPSPrompt"));
+//		clips.watch("rules"); // debugging
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/defs.clp");
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/rules.clp");
 	}
@@ -248,8 +248,12 @@ public class Diagnostics extends JFrame implements ActionListener {
 	 * @see net.sf.clipsrules.jni.Environment#eval(String)
 	 */
 	PrimitiveValue eval(String expression) {
-		PrimitiveValue res = clips.eval(expression);
+		// Escaping the back slashes in the expression before passing the string to the environment
+		// (each '\' should be changed to "\\"),
+		// then running CLIPS and getting the result
+		PrimitiveValue res = clips.eval(expression.replace("\\", "\\\\"));
 
+		// Checking if the result is a multi-filed value
 		if (res.getClass().getSimpleName().equals("MultifieldValue")) {
 			MultifieldValue mv = (MultifieldValue) res;
 
@@ -258,13 +262,15 @@ public class Diagnostics extends JFrame implements ActionListener {
 				outputArea.append(mv.get(i).toString() + "\n");
 			}
 
-			outputArea.append("\nCLIPS> ");
+			outputArea.append(resources.getString("CLIPSPrompt"));
 		}
+		// ... or a void value
 		else if (res.getClass().getSimpleName().equals("VoidValue")) {
-			outputArea.append(expression + "\n\n/* Void Value */\n\nCLIPS> ");
+			outputArea.append(expression + "\n\n/* Void Value */\n" + resources.getString("CLIPSPrompt"));
 		}
+		// ... or a single value
 		else {
-			outputArea.append(expression + "\n\n" + res.toString() + "\n\nCLIPS> ");
+			outputArea.append(expression + "\n\n" + res.toString() + "\n" + resources.getString("CLIPSPrompt"));
 		}
 
 		return res;
@@ -326,7 +332,7 @@ public class Diagnostics extends JFrame implements ActionListener {
 				File file = fileChooser.getSelectedFile();
 				filePathTF.setText(file.getPath());
 
-				eval("(load \"" + file.getPath().replace("\\", "\\\\") + "\")");
+				eval("(load \"" + file.getPath() + "\")");
 				clips.reset();
 			}
 		}
@@ -334,7 +340,7 @@ public class Diagnostics extends JFrame implements ActionListener {
 			File file = new File(filePathTF.getText());
 
 			if (file.exists()) {
-				eval("(load \"" + filePathTF.getText().replace("\\", "\\\\") + "\")");
+				eval("(load \"" + filePathTF.getText() + "\")");
 				clips.reset();
 			}
 			else {
@@ -348,7 +354,7 @@ public class Diagnostics extends JFrame implements ActionListener {
 			MultifieldValue mv = (MultifieldValue) clips.eval("(find-fact " + factFilterTF.getText() + ")");
 			if (mv.size() == 0) {
 				JOptionPane.showMessageDialog(this,
-				                              "There are no facts that match the query.",
+				                              "There are no facts that match the query:\n" + factFilterTF.getText(),
 				                              "Facts not found",
 				                              JOptionPane.INFORMATION_MESSAGE);
 				return;
@@ -357,7 +363,7 @@ public class Diagnostics extends JFrame implements ActionListener {
 			new FactsFrame(this, factFilterTF.getText());
 		}
 		else if (e.getSource() == clipsCommandTF) {
-			eval(clipsCommandTF.getText().replace("\\", "\\\\"));
+			eval(clipsCommandTF.getText());
 			clipsCommandTF.setText("");
 			clips.printBanner();
 		}
