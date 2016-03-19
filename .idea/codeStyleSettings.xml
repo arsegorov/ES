@@ -19,6 +19,7 @@
           </indentOptions>
         </codeStyleSettings>
         <codeStyleSettings language="JAVA">
+          <option name="CLASS_BRACE_STYLE" value="2" />
           <option name="ELSE_ON_NEW_LINE" value="true" />
           <option name="CATCH_ON_NEW_LINE" value="true" />
           <option name="FINALLY_ON_NEW_LINE" value="true" />
@@ -31,6 +32,7 @@
           <option name="ALIGN_MULTILINE_THROWS_LIST" value="true" />
           <option name="ALIGN_MULTILINE_EXTENDS_LIST" value="true" />
           <option name="ALIGN_MULTILINE_ARRAY_INITIALIZER_EXPRESSION" value="true" />
+          <option name="SPACE_AROUND_MULTIPLICATIVE_OPERATORS" value="false" />
           <option name="SPACE_AFTER_QUEST" value="false" />
           <option name="SPACE_AFTER_COLON" value="false" />
           <option name="CALL_PARAMETERS_WRAP" value="1" />
@@ -52,7 +54,6 @@
           <option name="DOWHILE_BRACE_FORCE" value="3" />
           <option name="WHILE_BRACE_FORCE" value="3" />
           <option name="FOR_BRACE_FORCE" value="3" />
-          <option name="METHOD_ANNOTATION_WRAP" value="1" />
           <option name="CLASS_ANNOTATION_WRAP" value="1" />
           <option name="FIELD_ANNOTATION_WRAP" value="1" />
           <option name="VARIABLE_ANNOTATION_WRAP" value="1" />
@@ -66,6 +67,5 @@
       </value>
     </option>
     <option name="USE_PER_PROJECT_SETTINGS" value="true" />
-    <option name="PREFERRED_PROJECT_CODE_STYLE" value="Default (1)" />
   </component>
 </project>

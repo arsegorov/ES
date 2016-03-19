@@ -1,9 +1,9 @@
 package org.reasoningmind.diagnostics;
 
 /**
- * Created by ars on 3/15/2016.
+ * Labels for all the different skills
  */
-public class Skills {
+public class Skill {
 	//# Natural numbers
 
 	//## Mental Addition
