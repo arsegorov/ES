@@ -19,22 +19,23 @@ import java.util.ResourceBundle;
 
 /**
  * This is the main class of the diagnostics application.
- * It provides user interface and an interface with the CLIPS system.
+ * It provides the user interface and communication with the CLIPS system.
  */
-public class Diagnostics extends JFrame implements ActionListener {
+public class Diagnostics extends JFrame implements ActionListener
+{
 
 	// Data handlers
 	// Need only one of each for the life of the application
-	final JFileChooser fileChooser = new JFileChooser();
+	private final JFileChooser fileChooser = new JFileChooser();
 
 	// Parts of user interface
-	JTextField filePathTF, clipsCommandTF, factFilterTF;
-	JTextArea outputArea;
+	private JTextField filePathTF, clipsCommandTF, factFilterTF;
+	private JTextArea outputArea;
 
 	// Application text resources
-	ResourceBundle resources;
+	private ResourceBundle resources;
 
-	public ResourceBundle getResources() {
+	ResourceBundle getResources() {
 		return resources;
 	}
 
@@ -44,15 +45,15 @@ public class Diagnostics extends JFrame implements ActionListener {
 	 * This is where the CLIPSJNI.dll is.
 	 * In IntelliJ Idea, the option is specified under VM Options in "Run/Debug Configurations"
 	 */
-	Environment clips;
+	private Environment clips;
 
-	public Environment getClips() {
+	Environment getClips() {
 		return clips;
 	}
 
 	// Concurrency-related fields
-	boolean isExecuting = false;
-	Thread executionThread;
+	private boolean isExecuting = false;
+	private Thread executionThread;
 
 
 	// ============
@@ -63,7 +64,7 @@ public class Diagnostics extends JFrame implements ActionListener {
 	 * The default constructor that sets up the main window of the application and creates a CLIPS environment with the
 	 * diagnostics <i>defrules</i> and <i>deftemplates</i> loaded from the resources.
 	 */
-	Diagnostics() {
+	private Diagnostics() {
 		// Accessing the resources file
 		try {
 			resources = ResourceBundle.getBundle(
@@ -205,8 +206,7 @@ public class Diagnostics extends JFrame implements ActionListener {
 
 
 		clips = new Environment();
-		outputArea.append(clips.getVersion() + "\n" + resources.getString("CLIPSPrompt"));
-//		clips.watch("rules"); // debugging
+		outputArea.append(Environment.getVersion() + "\n" + resources.getString("CLIPSPrompt"));
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/defs.clp");
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/rules.clp");
 	}
@@ -224,11 +224,7 @@ public class Diagnostics extends JFrame implements ActionListener {
 	 */
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(
-				new Runnable() {
-					public void run() {
-						new Diagnostics();
-					}
-				}
+				Diagnostics::new
 		);
 	}
 
@@ -247,7 +243,7 @@ public class Diagnostics extends JFrame implements ActionListener {
 	 *
 	 * @see net.sf.clipsrules.jni.Environment#eval(String)
 	 */
-	PrimitiveValue eval(String expression) {
+	private PrimitiveValue eval(String expression) {
 		// Escaping the back slashes in the expression before passing the string to the environment
 		// (each '\' should be changed to "\\"),
 		// then running CLIPS and getting the result
@@ -280,26 +276,21 @@ public class Diagnostics extends JFrame implements ActionListener {
 	/**
 	 * Invokes the <code>(run)</code> command in the CLIPS environment in a separate thread.
 	 */
-	public void runDiagnostics() {
+	private void runDiagnostics() {
 		Runnable runThread =
-				new Runnable() {
-					public void run() {
-						clips.run();
+				() -> {
+					clips.run();
 
-						SwingUtilities.invokeLater(
-								new Runnable() {
-									@Override
-									public void run() {
-										isExecuting = false;
+					SwingUtilities.invokeLater(
+							() -> {
+								isExecuting = false;
 
-										filePathTF.setEnabled(true);
-										clipsCommandTF.setEnabled(true);
-										filePathTF.setEnabled(true);
-										setCursor(Cursor.getDefaultCursor());
-									}
-								}
-						);
-					}
+								filePathTF.setEnabled(true);
+								clipsCommandTF.setEnabled(true);
+								filePathTF.setEnabled(true);
+								setCursor(Cursor.getDefaultCursor());
+							}
+					);
 				};
 
 		isExecuting = true;

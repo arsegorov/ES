@@ -13,20 +13,11 @@ import java.util.Vector;
 /**
  * This class is used to display a selection of facts that use a common template
  */
-public class FactsFrame extends JFrame {
-
-	Diagnostics host;
-
-	// Text resources
-	ResourceBundle resources;
-	Environment clips;
-
-	JTable factsView;
+class FactsFrame extends JFrame {
 
 	FactsFrame(Diagnostics host, String filter) {
-		this.host = host;
-		resources = host.getResources();
-		clips = host.getClips();
+		ResourceBundle resources = host.getResources();
+		Environment clips = host.getClips();
 
 		this.setTitle(resources.getString("FactsFrameTitle") + " [ " + filter + " ]");
 		this.setLayout(new BorderLayout());
@@ -45,8 +36,8 @@ public class FactsFrame extends JFrame {
 				Vector row = new Vector(columnHeaders.size());
 				FactAddressValue fv = (FactAddressValue) mv.get(i);
 
-				for (int j = 0; j < columnHeaders.size(); j++) {
-					PrimitiveValue pv = fv.getFactSlot((String) columnHeaders.get(j));
+				for (Object columnHeader : columnHeaders) {
+					PrimitiveValue pv = fv.getFactSlot((String) columnHeader);
 
 					if (pv.getClass().getSimpleName().equals("MultifieldValue")) {
 						MultifieldValue mv1 = (MultifieldValue) pv;
@@ -79,7 +70,7 @@ public class FactsFrame extends JFrame {
 			e.printStackTrace();
 		}
 
-		factsView = new JTable(rows, columnHeaders);
+		JTable factsView = new JTable(rows, columnHeaders);
 
 		JScrollPane tableScroller = new JScrollPane(factsView);
 
