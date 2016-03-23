@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Vector;
 
 /**
@@ -18,38 +19,39 @@ import java.util.Vector;
 public class StudentDataManager
 		extends HashMap<String, StudentHistory>
 {
-	Diagnostics hostApp;
+	private Diagnostics hostApp;
 
 	private Vector<String> studentIDs;
 	private Vector<String> questionIDs;
-	private HashMap<String, Vector<Skill>> questionTags;
+	private HashMap<String, Vector<String>> questionSkills;
+	private HashMap<String, Integer> questionMultiplicity;
 
 	StudentDataManager(Diagnostics hostApp) {
 		this.hostApp = hostApp;
 	}
 
-	void readCSV(File csv) {
+	void loadCSV(File csv) {
 		try {
 			Class.forName("org.sqlite.JDBC");
 			Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
 
 			Statement stat = connection.createStatement();
-			stat.executeUpdate("drop table if exists outcomes;");
+			stat.executeUpdate("DROP TABLE IF EXISTS outcomes;");
 			stat.executeUpdate(
-					"create table outcomes (studentID, timestamp NUMERIC, questionID, isCorrect NUMERIC, skill);");
+					"CREATE TABLE outcomes (studentID, timestamp NUMERIC, questionID, isCorrect NUMERIC, skill);");
 
 			PreparedStatement prep = connection.prepareStatement(
-					"insert into people values (?, ?, ?, ?, ?);");
+					"INSERT INTO outcomes VALUES (?, ?, ?, ?, ?);");
 
 			CSVParser csvParser =
-					CSVParser.parse(csv, StandardCharsets.UTF_8, CSVFormat.DEFAULT.withHeader().withEscape('"'));
+					CSVParser.parse(csv, StandardCharsets.UTF_8, CSVFormat.DEFAULT.withHeader());
 
 			for (CSVRecord record : csvParser) {
 				prep.setString(1, record.get("studentID"));
 				prep.setLong(2, Long.parseLong(record.get("timestamp")));
 				prep.setString(3,
-				               record.get("lesson") + " & " + record.get("problem") + " & " + record.get("question") +
-				               " & " + record.get("attempt"));
+				               record.get("lesson") + "/" + record.get("problem") + ": " + record.get("question") +
+				               "\t#" + record.get("attempt"));
 				prep.setBoolean(4, record.get("isCorrect").equals("correct"));
 				prep.setString(5, record.get("skill"));
 				prep.addBatch();
@@ -68,15 +70,18 @@ public class StudentDataManager
 		}
 	}
 
-	private void lookupStudentIDs() {
+	private void lookupStudentIDs()
+			throws ClassNotFoundException {
 		try {
 			Class.forName("org.sqlite.JDBC");
 			Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
 
 			Statement stat = connection.createStatement();
-			ResultSet rs = stat.executeQuery("select distinct studentID from outcomes;");
+			ResultSet rs = stat.executeQuery("SELECT DISTINCT studentID FROM outcomes;");
 
-			studentIDs = new Vector<>();
+			if (studentIDs == null) {
+				studentIDs = new Vector<>();
+			}
 
 			while (rs.next()) {
 				studentIDs.add(rs.getString(1));
@@ -84,20 +89,23 @@ public class StudentDataManager
 
 			connection.close();
 		}
-		catch (ClassNotFoundException | SQLException e) {
-			e.printStackTrace();
+		catch (SQLException sqle) {
+			sqle.printStackTrace();
 		}
 	}
 
-	private void lookupQuestionIDs() {
+	private void lookupQuestions()
+			throws ClassNotFoundException {
 		try {
 			Class.forName("org.sqlite.JDBC");
 			Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
 
 			Statement stat = connection.createStatement();
-			ResultSet rs = stat.executeQuery("select distinct questionID from outcomes;");
+			ResultSet rs = stat.executeQuery("SELECT DISTINCT questionID FROM outcomes;");
 
-			questionIDs = new Vector<>();
+			if (questionIDs == null) {
+				questionIDs = new Vector<>();
+			}
 
 			while (rs.next()) {
 				questionIDs.add(rs.getString(1));
@@ -105,38 +113,122 @@ public class StudentDataManager
 
 			connection.close();
 		}
-		catch (ClassNotFoundException | SQLException e) {
+		catch (SQLException sqle) {
+			sqle.printStackTrace();
+		}
+
+		lookupQuestionSkills();
+	}
+
+	private void lookupQuestionSkills()
+			throws ClassNotFoundException {
+		try {
+			Class.forName("org.sqlite.JDBC");
+			Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
+			Statement stat = connection.createStatement();
+			ResultSet rs;
+
+			if (questionSkills == null) {
+				questionSkills = new HashMap<>();
+				questionMultiplicity = new HashMap<>();
+			}
+
+			for (String questionID : questionIDs) {
+				rs = stat.executeQuery(
+						"SELECT DISTINCT skill FROM outcomes WHERE questionID = '" + questionID + "';");
+
+				Vector<String> skills = new Vector<>();
+
+				while (rs.next()) {
+					skills.add(rs.getString(1));
+				}
+
+				questionSkills.put(questionID, skills);
+				questionMultiplicity.put(questionID, skills.size());
+			}
+
+			connection.close();
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void lookupSkills() {
-		// TODO
-//		try {
-//			Class.forName("org.sqlite.JDBC");
-//			Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
-//
-//			Statement stat = connection.createStatement();
-//			for (String questionID : questionIDs) {
-//				ResultSet rs = stat.executeQuery("select distinct skill from outcomes where questionID = '" + questionID + "';");
-//
-//				Vector<Skill> skills = new Vector<>();
-//
-//				while (rs.next()) {
-//					skills.add(new Skill(rs.getString(1)));
-//				}
-//			}
-//
-//			connection.close();
-//		}
-//		catch (ClassNotFoundException | SQLException e) {
-//			e.printStackTrace();
-//		}
+	Vector<String> getStudentIDs() {
+		return studentIDs;
 	}
 
-	void readCLP(File clp) {
-
+	Vector<String> getQuestionIDs() {
+		return questionIDs;
 	}
+
+	Vector<String> getQuestionSkills(String questionID) {
+		if (questionID != null && questionSkills != null) {
+			return questionSkills.get(questionID);
+		}
+		else {
+			System.out.println(
+					"Question skills are missing for " + (questionID != null ?"\"" + questionID + "\"" :"NULL"));
+			return null;
+		}
+	}
+
+	int getQuestionMultiplicity(String questionID) {
+		if (questionID != null && questionMultiplicity != null) {
+			return questionMultiplicity.get(questionID);
+		}
+		else {
+			System.out.println(
+					"Question skills are missing for " + (questionID != null ?"\"" + questionID + "\"" :"NULL"));
+			return 0;
+		}
+	}
+
+	void refresh() {
+		studentIDs = null;
+		questionIDs = null;
+		questionSkills = null;
+
+		try {
+			lookupStudentIDs();
+			lookupQuestions();
+		}
+		catch (ClassNotFoundException cnfe) {
+			cnfe.printStackTrace();
+		}
+	}
+
+	void initHistory() {
+		for (String student : studentIDs) {
+			StudentHistory history = new StudentHistory();
+			put(student, history);
+
+			try {
+				Class.forName("org.sqlite.JDBC");
+				Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
+
+				Statement stat = connection.createStatement();
+				ResultSet rs = stat.executeQuery(
+						"SELECT DISTINCT timestamp, questionID, isCorrect FROM outcomes WHERE studentID='" +
+						student + "';");
+
+				while (rs.next()) {
+					Long timestamp = rs.getLong("timestamp");
+					String questionID = rs.getString("questionID");
+					boolean isCorrect = rs.getBoolean("isCorrect");
+
+					history.put(timestamp, questionID, new HashSet<>(questionSkills.get(questionID)), isCorrect);
+				}
+			}
+			catch (ClassNotFoundException | SQLException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+//	void readCLP(File clp) {
+//
+//	}
 
 	void dbConnectionTest() {
 		try {

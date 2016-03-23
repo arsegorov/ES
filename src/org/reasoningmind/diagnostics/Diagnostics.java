@@ -13,9 +13,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
+import java.util.*;
 
 /**
  * This is the main class of the diagnostics application.
@@ -54,6 +52,8 @@ public class Diagnostics extends JFrame implements ActionListener
 	// Concurrency-related fields
 	private boolean isExecuting = false;
 	private Thread executionThread;
+
+	private final StudentDataManager dataManager = new StudentDataManager(this);
 
 
 	// ============
@@ -209,6 +209,40 @@ public class Diagnostics extends JFrame implements ActionListener
 		outputArea.append(Environment.getVersion() + "\n" + resources.getString("CLIPSPrompt"));
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/defs.clp");
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/rules.clp");
+
+		dataManager.loadCSV(new File("C:\\Users\\ars\\Desktop\\sample outcomes.csv"));
+		dataManager.refresh();
+		dataManager.initHistory();
+
+		String studentID = dataManager.getStudentIDs().get(2);
+		System.out.println(studentID);
+
+		StudentHistory
+				history = dataManager.get(studentID);
+
+		Set<Map.Entry<String, StudentHistory.SkillHistory>>
+				skills = history.entrySet();
+
+		for (Map.Entry<String, StudentHistory.SkillHistory>
+				skill : skills) {
+
+			System.out.println(skill.getKey());
+
+			StudentHistory.SkillHistory
+					skillHistory = skill.getValue();
+			Set<Map.Entry<StudentHistory.RecordKey, StudentHistory.Record>>
+					responses = skillHistory.entrySet();
+
+			for (Map.Entry<StudentHistory.RecordKey, StudentHistory.Record>
+					response : responses) {
+
+				System.out.println(
+						"\t" + response.getKey().getTimestamp() + ": " + response.getValue().getOutcome() +
+						"->" + skillHistory.getSkillLevel(response.getKey()));
+			}
+
+		}
+		System.out.println();
 	}
 
 

@@ -10,17 +10,17 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * Keeps the history of a given student's responses.
  * <p>
  * The history is represented as a set of individual-skill histories. More specifically, the overall history stores
- * pairs {@link Skill}->{@link SkillHistory}.
+ * pairs {@link String}->{@link SkillHistory}.
  */
 class StudentHistory
-		extends HashMap<Skill, StudentHistory.SkillHistory>
+		extends HashMap<String, StudentHistory.SkillHistory>
 { // TODO: javadoc
 	///
 	/// Fields
 	///
 
-	private String studentID;
-	private HashMap<Skill, Double> skillLevels;
+//	private String studentID;
+	private HashMap<String, Double> skillLevels;
 	private boolean changed = true;
 
 
@@ -28,20 +28,20 @@ class StudentHistory
 	/// Constructors
 	///
 
-	StudentHistory(String studentID) {
-		this.studentID = studentID;
-	}
+//	StudentHistory(String studentID) {
+//		this.studentID = studentID;
+//	}
 
 
 	///
 	/// Methods
 	///
 
-	public String getStudentID() {
-		return studentID;
-	}
+//	public String getStudentID() {
+//		return studentID;
+//	}
 
-	private void put(RecordKey key, Skill skill, int outcome) {
+	private void put(RecordKey key, String skill, int outcome) {
 		if (key == null || skill == null) {
 			return;
 		}
@@ -56,7 +56,7 @@ class StudentHistory
 		changed |= history.put(key, outcome);
 	}
 
-	public void put(RecordKey key, Set<Skill> skills, boolean isCorrect) {
+	public void put(RecordKey key, Set<String> skills, boolean isCorrect) {
 		if (key == null || skills == null || skills.size() == 0) {
 			return;
 		}
@@ -67,12 +67,12 @@ class StudentHistory
 		               ?SkillHistory.FAIL_A_SINGLE_SKILL
 		               :SkillHistory.FAIL_MULTIPLE_SKILLS;
 
-		for (Skill skill : skills) {
+		for (String skill : skills) {
 			put(key, skill, outcome);
 		}
 	}
 
-	public void put(long timestamp, String questionID, Set<Skill> skills, boolean isCorrect) {
+	public void put(long timestamp, String questionID, Set<String> skills, boolean isCorrect) {
 		if(skills == null || skills.size() == 0) {
 			return;
 		}
@@ -80,13 +80,13 @@ class StudentHistory
 		put(new RecordKey(timestamp, questionID), skills, isCorrect);
 	}
 
-	public HashMap<Skill, Double> getSkillLevels() {
+	public HashMap<String, Double> getSkillLevels() {
 		if(changed) {
 			skillLevels = new HashMap<>(size());
 
-			Set<Skill> skills = keySet();
+			Set<String> skills = keySet();
 
-			for (Skill skill : skills) {
+			for (String skill : skills) {
 				skillLevels.put(skill, get(skill).getSkillLevel());
 			}
 
@@ -363,7 +363,7 @@ class StudentHistory
 		 *
 		 * @return the skill level estimate between 0.0 and 1.0, with lower value representing poorer skill
 		 */
-		double getSkillLevel(RecordKey key) {
+		public double getSkillLevel(RecordKey key) {
 			if (key == null) { // if the passed key is null, return the estimate for the most recent moment
 				return getSkillLevel();
 			}
