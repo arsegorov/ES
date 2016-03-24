@@ -4,7 +4,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
-import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -16,19 +15,19 @@ import java.util.Vector;
 /**
  * This class handles operations with the student data.
  */
-public class StudentDataManager
+class StudentDataManager
 		extends HashMap<String, StudentHistory>
 {
-	private Diagnostics hostApp;
+//	private Diagnostics hostApp;
 
 	private Vector<String> studentIDs;
 	private Vector<String> questionIDs;
 	private HashMap<String, Vector<String>> questionSkills;
-	private HashMap<String, Integer> questionMultiplicity;
+//	private HashMap<String, Integer> questionMultiplicity;
 
-	StudentDataManager(Diagnostics hostApp) {
-		this.hostApp = hostApp;
-	}
+//	StudentDataManager(Diagnostics hostApp) {
+//		this.hostApp = hostApp;
+//	}
 
 	void loadCSV(File csv) {
 		try {
@@ -130,7 +129,7 @@ public class StudentDataManager
 
 			if (questionSkills == null) {
 				questionSkills = new HashMap<>();
-				questionMultiplicity = new HashMap<>();
+//				questionMultiplicity = new HashMap<>();
 			}
 
 			for (String questionID : questionIDs) {
@@ -144,7 +143,7 @@ public class StudentDataManager
 				}
 
 				questionSkills.put(questionID, skills);
-				questionMultiplicity.put(questionID, skills.size());
+//				questionMultiplicity.put(questionID, skills.size());
 			}
 
 			connection.close();
@@ -158,31 +157,31 @@ public class StudentDataManager
 		return studentIDs;
 	}
 
-	Vector<String> getQuestionIDs() {
-		return questionIDs;
-	}
+//	Vector<String> getQuestionIDs() {
+//		return questionIDs;
+//	}
 
-	Vector<String> getQuestionSkills(String questionID) {
-		if (questionID != null && questionSkills != null) {
-			return questionSkills.get(questionID);
-		}
-		else {
-			System.out.println(
-					"Question skills are missing for " + (questionID != null ?"\"" + questionID + "\"" :"NULL"));
-			return null;
-		}
-	}
+//	Vector<String> getQuestionSkills(String questionID) {
+//		if (questionID != null && questionSkills != null) {
+//			return questionSkills.get(questionID);
+//		}
+//		else {
+//			System.out.println(
+//					"Question skills are missing for " + (questionID != null ?"\"" + questionID + "\"" :"NULL"));
+//			return null;
+//		}
+//	}
 
-	int getQuestionMultiplicity(String questionID) {
-		if (questionID != null && questionMultiplicity != null) {
-			return questionMultiplicity.get(questionID);
-		}
-		else {
-			System.out.println(
-					"Question skills are missing for " + (questionID != null ?"\"" + questionID + "\"" :"NULL"));
-			return 0;
-		}
-	}
+//	int getQuestionMultiplicity(String questionID) {
+//		if (questionID != null && questionMultiplicity != null) {
+//			return questionMultiplicity.get(questionID);
+//		}
+//		else {
+//			System.out.println(
+//					"Question skills are missing for " + (questionID != null ?"\"" + questionID + "\"" :"NULL"));
+//			return 0;
+//		}
+//	}
 
 	void refresh() {
 		studentIDs = null;
@@ -230,53 +229,53 @@ public class StudentDataManager
 //
 //	}
 
-	void dbConnectionTest() {
-		try {
-			Class.forName("org.sqlite.JDBC");
-			Connection connection = DriverManager.getConnection("jdbc:sqlite:test.db");
-
-			Statement stat = connection.createStatement();
-			stat.executeUpdate("drop table if exists people;");
-			stat.executeUpdate("create table people (name, occupation);");
-
-			PreparedStatement prep = connection.prepareStatement(
-					"insert into people values (?, ?);");
-			prep.setString(1, "Gandhi");
-			prep.setString(2, "politics");
-			prep.addBatch();
-			prep.setString(1, "Turing");
-			prep.setString(2, "computers");
-			prep.addBatch();
-			prep.setString(1, "Wittgenstein");
-			prep.setString(2, "smartypants");
-			prep.addBatch();
-
-			connection.setAutoCommit(false);
-			prep.executeBatch();
-			connection.setAutoCommit(true);
-
-			ResultSet rs = stat.executeQuery("select * from people;");
-			while (rs.next()) {
-				System.out.println("name = " + rs.getString("name"));
-				System.out.println("job = " + rs.getString("occupation"));
-			}
-			rs.close();
-			connection.close();
-		}
-		catch (ClassNotFoundException classNotFoundException) {
-			JOptionPane.showMessageDialog(
-					hostApp,
-					"Class \"org.sqlite.JDBC\" is not found.",
-					"Error",
-					JOptionPane.ERROR_MESSAGE);
-
-		}
-		catch (Exception e) {
-			JOptionPane.showMessageDialog(hostApp,
-			                              e.getClass().getName() + " in StudentDataManager.dbConnectionTest(): " +
-			                              e.getMessage(),
-			                              "Error",
-			                              JOptionPane.ERROR_MESSAGE);
-		}
-	}
+//	void dbConnectionTest() {
+//		try {
+//			Class.forName("org.sqlite.JDBC");
+//			Connection connection = DriverManager.getConnection("jdbc:sqlite:test.db");
+//
+//			Statement stat = connection.createStatement();
+//			stat.executeUpdate("drop table if exists people;");
+//			stat.executeUpdate("create table people (name, occupation);");
+//
+//			PreparedStatement prep = connection.prepareStatement(
+//					"insert into people values (?, ?);");
+//			prep.setString(1, "Gandhi");
+//			prep.setString(2, "politics");
+//			prep.addBatch();
+//			prep.setString(1, "Turing");
+//			prep.setString(2, "computers");
+//			prep.addBatch();
+//			prep.setString(1, "Wittgenstein");
+//			prep.setString(2, "smartypants");
+//			prep.addBatch();
+//
+//			connection.setAutoCommit(false);
+//			prep.executeBatch();
+//			connection.setAutoCommit(true);
+//
+//			ResultSet rs = stat.executeQuery("select * from people;");
+//			while (rs.next()) {
+//				System.out.println("name = " + rs.getString("name"));
+//				System.out.println("job = " + rs.getString("occupation"));
+//			}
+//			rs.close();
+//			connection.close();
+//		}
+//		catch (ClassNotFoundException classNotFoundException) {
+//			JOptionPane.showMessageDialog(
+//					hostApp,
+//					"Class \"org.sqlite.JDBC\" is not found.",
+//					"Error",
+//					JOptionPane.ERROR_MESSAGE);
+//
+//		}
+//		catch (Exception e) {
+//			JOptionPane.showMessageDialog(hostApp,
+//			                              e.getClass().getName() + " in StudentDataManager.dbConnectionTest(): " +
+//			                              e.getMessage(),
+//			                              "Error",
+//			                              JOptionPane.ERROR_MESSAGE);
+//		}
+//	}
 }

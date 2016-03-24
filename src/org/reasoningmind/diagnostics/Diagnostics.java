@@ -13,7 +13,10 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.*;
+import java.util.Locale;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import java.util.Set;
 
 /**
  * This is the main class of the diagnostics application.
@@ -52,8 +55,6 @@ public class Diagnostics extends JFrame implements ActionListener
 	// Concurrency-related fields
 	private boolean isExecuting = false;
 	private Thread executionThread;
-
-	private final StudentDataManager dataManager = new StudentDataManager(this);
 
 
 	// ============
@@ -210,6 +211,8 @@ public class Diagnostics extends JFrame implements ActionListener
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/defs.clp");
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/rules.clp");
 
+		final StudentDataManager dataManager = new StudentDataManager();
+
 		dataManager.loadCSV(new File("C:\\Users\\ars\\Desktop\\sample outcomes.csv"));
 		dataManager.refresh();
 		dataManager.initHistory();
@@ -220,29 +223,24 @@ public class Diagnostics extends JFrame implements ActionListener
 		StudentHistory
 				history = dataManager.get(studentID);
 
-		Set<Map.Entry<String, StudentHistory.SkillHistory>>
-				skills = history.entrySet();
+		Set<String> skills = history.keySet();
 
-		for (Map.Entry<String, StudentHistory.SkillHistory>
-				skill : skills) {
+		for (String skill : skills) {
+			System.out.println("\t" + skill);
 
-			System.out.println(skill.getKey());
-
-			StudentHistory.SkillHistory
-					skillHistory = skill.getValue();
-			Set<Map.Entry<StudentHistory.RecordKey, StudentHistory.Record>>
-					responses = skillHistory.entrySet();
-
-			for (Map.Entry<StudentHistory.RecordKey, StudentHistory.Record>
-					response : responses) {
-
-				System.out.println(
-						"\t" + response.getKey().getTimestamp() + ": " + response.getValue().getOutcome() +
-						"->" + skillHistory.getSkillLevel(response.getKey()));
-			}
-
+			StudentHistory.SkillHistory skillHistory = history.get(skill);
+			System.out.println(String.format("\t\t" + skillHistory.size() + "\t%1.3f", skillHistory.getSkillLevel()));
+//			Set<StudentHistory.RecordKey> responses = skillHistory.keySet();
+//
+//			for (StudentHistory.RecordKey
+//					response : responses) {
+//				System.out.println(
+//						"\t\t" + response.getTimestamp() +
+//						":\t" + skillHistory.get(response).getOutcome() +
+//						" -> " + skillHistory.getSkillLevel(response));
+//			}
 		}
-		System.out.println();
+		System.out.println(); // a line for debugging breakpoints
 	}
 
 
@@ -307,35 +305,35 @@ public class Diagnostics extends JFrame implements ActionListener
 	}
 
 
-	/**
-	 * Invokes the <code>(run)</code> command in the CLIPS environment in a separate thread.
-	 */
-	private void runDiagnostics() {
-		Runnable runThread =
-				() -> {
-					clips.run();
-
-					SwingUtilities.invokeLater(
-							() -> {
-								isExecuting = false;
-
-								filePathTF.setEnabled(true);
-								clipsCommandTF.setEnabled(true);
-								filePathTF.setEnabled(true);
-								setCursor(Cursor.getDefaultCursor());
-							}
-					);
-				};
-
-		isExecuting = true;
-		filePathTF.setEnabled(false);
-		clipsCommandTF.setEnabled(false);
-		filePathTF.setEnabled(false);
-
-		executionThread = new Thread(runThread);
-		setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-		executionThread.start();
-	}
+//	/**
+//	 * Invokes the <code>(run)</code> command in the CLIPS environment in a separate thread.
+//	 */
+//	private void runDiagnostics() {
+//		Runnable runThread =
+//				() -> {
+//					clips.run();
+//
+//					SwingUtilities.invokeLater(
+//							() -> {
+//								isExecuting = false;
+//
+//								filePathTF.setEnabled(true);
+//								clipsCommandTF.setEnabled(true);
+//								filePathTF.setEnabled(true);
+//								setCursor(Cursor.getDefaultCursor());
+//							}
+//					);
+//				};
+//
+//		isExecuting = true;
+//		filePathTF.setEnabled(false);
+//		clipsCommandTF.setEnabled(false);
+//		filePathTF.setEnabled(false);
+//
+//		executionThread = new Thread(runThread);
+//		setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+//		executionThread.start();
+//	}
 
 
 	/**

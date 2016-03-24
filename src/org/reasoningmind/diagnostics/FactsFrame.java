@@ -13,7 +13,8 @@ import java.util.Vector;
 /**
  * This class is used to display a selection of facts that use a common template
  */
-class FactsFrame extends JFrame {
+class FactsFrame extends JFrame
+{
 
 	FactsFrame(Diagnostics host, String filter) {
 		ResourceBundle resources = host.getResources();

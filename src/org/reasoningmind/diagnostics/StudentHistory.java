@@ -20,8 +20,8 @@ class StudentHistory
 	///
 
 //	private String studentID;
-	private HashMap<String, Double> skillLevels;
-	private boolean changed = true;
+//	private HashMap<String, Double> skillLevels;
+//	private boolean changed = true;
 
 
 	///
@@ -53,10 +53,11 @@ class StudentHistory
 			put(skill, history);
 		}
 
-		changed |= history.put(key, outcome);
+//		changed |=
+		history.put(key, outcome);
 	}
 
-	public void put(RecordKey key, Set<String> skills, boolean isCorrect) {
+	private void put(RecordKey key, Set<String> skills, boolean isCorrect) {
 		if (key == null || skills == null || skills.size() == 0) {
 			return;
 		}
@@ -72,29 +73,29 @@ class StudentHistory
 		}
 	}
 
-	public void put(long timestamp, String questionID, Set<String> skills, boolean isCorrect) {
-		if(skills == null || skills.size() == 0) {
+	void put(long timestamp, String questionID, Set<String> skills, boolean isCorrect) {
+		if (skills == null || skills.size() == 0) {
 			return;
 		}
 
 		put(new RecordKey(timestamp, questionID), skills, isCorrect);
 	}
 
-	public HashMap<String, Double> getSkillLevels() {
-		if(changed) {
-			skillLevels = new HashMap<>(size());
-
-			Set<String> skills = keySet();
-
-			for (String skill : skills) {
-				skillLevels.put(skill, get(skill).getSkillLevel());
-			}
-
-			changed = false;
-		}
-
-		return skillLevels;
-	}
+//	public HashMap<String, Double> getSkillLevels() {
+//		if(changed) {
+//			skillLevels = new HashMap<>(size());
+//
+//			Set<String> skills = keySet();
+//
+//			for (String skill : skills) {
+//				skillLevels.put(skill, get(skill).getSkillLevel());
+//			}
+//
+//			changed = false;
+//		}
+//
+//		return skillLevels;
+//	}
 
 
 	/**
@@ -108,20 +109,22 @@ class StudentHistory
 			implements Comparable<RecordKey>
 	{
 		long timestamp;
-		String questionID;
+		String questionID = "none";
 
 		RecordKey(long timestamp, String questionID) {
 			this.timestamp = timestamp;
-			this.questionID = questionID;
+			if (questionID != null) {
+				this.questionID = questionID;
+			}
 		}
 
-		String getQuestionID() {
-			return questionID;
-		}
+//		String getQuestionID() {
+//			return questionID;
+//		}
 
-		long getTimestamp() {
-			return timestamp;
-		}
+//		long getTimestamp() {
+//			return timestamp;
+//		}
 
 		@Override
 		public boolean equals(Object o) {
@@ -134,11 +137,7 @@ class StudentHistory
 
 			RecordKey that = (RecordKey) o;
 
-			if (timestamp != that.timestamp) {
-				return false;
-			}
-
-			return questionID != null ?questionID.equals(that.questionID) :that.questionID == null;
+			return timestamp == that.timestamp && questionID.equals(that.questionID);
 		}
 
 		/**
@@ -171,7 +170,7 @@ class StudentHistory
 				return questionID.compareTo(other.questionID);
 			}
 			else {
-				return other.timestamp < timestamp ?1 :-1;
+				return other.timestamp < timestamp ?-1 :1;
 			}
 		}
 	}
@@ -216,8 +215,8 @@ class StudentHistory
 		///
 
 		// How many history entries to take into account when calculating different stats
-		private int historyLookupDepth = 20;
-		private double onePlusThreshold = 1.05;
+		private int historyLookupDepth = 10;
+		private double onePlusThreshold = 1 + 1.0/historyLookupDepth;
 
 		// Store the most recent history (up to historyLookupDepth items) for faster processing of new items
 		private Vector<Double> recentWeights;
@@ -250,16 +249,16 @@ class StudentHistory
 			recentOutcomes = new Vector<>(historyLookupDepth + 1);
 		}
 
-		SkillHistory(int historyLookupDepth) {
-			if (historyLookupDepth < 1) {
-				historyLookupDepth = 1;
-			}
-			this.historyLookupDepth = historyLookupDepth;
-			onePlusThreshold = 1 + 1.0/historyLookupDepth;
-
-			recentWeights = new Vector<>(historyLookupDepth + 1);
-			recentOutcomes = new Vector<>(historyLookupDepth + 1);
-		}
+//		SkillHistory(int historyLookupDepth) {
+//			if (historyLookupDepth < 1) {
+//				historyLookupDepth = 1;
+//			}
+//			this.historyLookupDepth = historyLookupDepth;
+//			onePlusThreshold = 1 + 1.0/historyLookupDepth;
+//
+//			recentWeights = new Vector<>(historyLookupDepth + 1);
+//			recentOutcomes = new Vector<>(historyLookupDepth + 1);
+//		}
 
 
 		///
@@ -363,22 +362,16 @@ class StudentHistory
 		 *
 		 * @return the skill level estimate between 0.0 and 1.0, with lower value representing poorer skill
 		 */
-		public double getSkillLevel(RecordKey key) {
-			if (key == null) { // if the passed key is null, return the estimate for the most recent moment
-				return getSkillLevel();
-			}
-
-			RecordKey k = floorKey(key);
-
-			// if there are no more recent recorded moments in the history, return the estimate for the most recent moment
-			if (k == null || k.equals(key)) {
+		double getSkillLevel(RecordKey key) {
+			if (key == null ||
+			    lowerKey(key) == null) { // if the passed key is null, return the estimate for the most recent moment
 				return getSkillLevel();
 			}
 
 			double totRecWeight = 0.0;
 			int totRecOutcomes = 0;
 
-			k = key;
+			RecordKey k = key;
 			for (int i = 0; i < historyLookupDepth && k != null; i++, k = higherKey(k)) {
 				Record rec = get(k);
 
@@ -611,14 +604,14 @@ class StudentHistory
 		 * Calculates the weight of a response given its outcome.
 		 *
 		 * @param totRecWeight
-		 * 		the total weight of the previous #historyLookupDepth records
+		 * 		the total weight of the previous {@link #historyLookupDepth} records
 		 * @param totRecOutcomes
-		 * 		the total of the outcomes of the previous #historyLookupDepth records
+		 * 		the total of the outcomes of the previous {@link #historyLookupDepth} records
 		 * @param outcome
 		 * 		the outcome of this response; should be {@link #PASS}, {@link #FAIL_A_SINGLE_SKILL}, or {@link
 		 * 		#FAIL_MULTIPLE_SKILLS}
 		 *
-		 * @return
+		 * @return the weight of the response
 		 */
 		private double getRecordWeight(double totRecWeight, double totRecOutcomes, int outcome) {
 			return (outcome == FAIL_A_SINGLE_SKILL || outcome == PASS)
