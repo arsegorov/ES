@@ -122,9 +122,9 @@ class StudentHistory
 //			return questionID;
 //		}
 
-//		long getTimestamp() {
-//			return timestamp;
-//		}
+		long getTimestamp() {
+			return timestamp;
+		}
 
 		@Override
 		public boolean equals(Object o) {

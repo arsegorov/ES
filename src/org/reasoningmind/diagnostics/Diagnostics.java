@@ -56,6 +56,8 @@ public class Diagnostics extends JFrame implements ActionListener
 	private boolean isExecuting = false;
 	private Thread executionThread;
 
+	private final StudentDataManager dataManager = new StudentDataManager();
+
 
 	// ============
 	// Constructors
@@ -211,36 +213,35 @@ public class Diagnostics extends JFrame implements ActionListener
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/defs.clp");
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/rules.clp");
 
-		final StudentDataManager dataManager = new StudentDataManager();
-
+//		dataManager.loadCSV(new File("C:\\Users\\aegorov\\Desktop\\sample outcomes.csv"));
 		dataManager.loadCSV(new File("C:\\Users\\ars\\Desktop\\sample outcomes.csv"));
 		dataManager.refresh();
 		dataManager.initHistory();
 
-		String studentID = dataManager.getStudentIDs().get(2);
-		System.out.println(studentID);
-
-		StudentHistory
-				history = dataManager.get(studentID);
-
-		Set<String> skills = history.keySet();
-
-		for (String skill : skills) {
-			System.out.println("\t" + skill);
-
-			StudentHistory.SkillHistory skillHistory = history.get(skill);
-			System.out.println(String.format("\t\t" + skillHistory.size() + "\t%1.3f", skillHistory.getSkillLevel()));
+//		String studentID = dataManager.getStudentIDs().get(2);
+//		outputArea.append(studentID + "\n");
+//
+//		StudentHistory
+//				history = dataManager.get(studentID);
+//
+//		Set<String> skills = history.keySet();
+//
+//		for (String skill : skills) {
+//			outputArea.append("\t" + skill + "\n");
+//
+//			StudentHistory.SkillHistory skillHistory = history.get(skill);
+////			System.out.println(String.format("\t\t" + skillHistory.size() + "\t%1.3f", skillHistory.getSkillLevel()));
 //			Set<StudentHistory.RecordKey> responses = skillHistory.keySet();
 //
 //			for (StudentHistory.RecordKey
 //					response : responses) {
-//				System.out.println(
+//				outputArea.append(
 //						"\t\t" + response.getTimestamp() +
 //						":\t" + skillHistory.get(response).getOutcome() +
-//						" -> " + skillHistory.getSkillLevel(response));
+//						" -> " + skillHistory.getSkillLevel(response) + "\n");
 //			}
-		}
-		System.out.println(); // a line for debugging breakpoints
+//		}
+//		System.out.println(); // a line for debugging breakpoints
 	}
 
 
@@ -386,9 +387,34 @@ public class Diagnostics extends JFrame implements ActionListener
 			new FactsFrame(this, factFilterTF.getText());
 		}
 		else if (e.getSource() == clipsCommandTF) {
-			eval(clipsCommandTF.getText());
-			clipsCommandTF.setText("");
-			clips.printBanner();
+//			eval(clipsCommandTF.getText());
+//			clipsCommandTF.setText("");
+//			clips.printBanner();
+			outputArea.setText("");
+
+			String studentID = dataManager.getStudentIDs().get(Integer.parseInt(clipsCommandTF.getText()));
+			outputArea.append(studentID + "\n");
+
+			StudentHistory
+					history = dataManager.get(studentID);
+
+			Set<String> skills = history.keySet();
+
+			for (String skill : skills) {
+				outputArea.append("\t" + skill + "\n");
+
+				StudentHistory.SkillHistory skillHistory = history.get(skill);
+//			System.out.println(String.format("\t\t" + skillHistory.size() + "\t%1.3f", skillHistory.getSkillLevel()));
+				Set<StudentHistory.RecordKey> responses = skillHistory.keySet();
+
+				for (StudentHistory.RecordKey
+						response : responses) {
+					outputArea.append(
+							"\t\t" + response.getTimestamp() +
+							":\t" + skillHistory.get(response).getOutcome() +
+							" -> " + skillHistory.getSkillLevel(response) + "\n");
+				}
+			}
 		}
 	}
 }
