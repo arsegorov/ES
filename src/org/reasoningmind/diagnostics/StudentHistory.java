@@ -1,5 +1,7 @@
 package org.reasoningmind.diagnostics;
 
+import org.ejml.simple.SimpleMatrix;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
@@ -12,34 +14,12 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * The history is represented as a set of individual-skill histories. More specifically, the overall history stores
  * pairs {@link String}->{@link SkillHistory}.
  */
-class StudentHistory
-		extends HashMap<String, StudentHistory.SkillHistory>
-{ // TODO: javadoc
-	///
-	/// Fields
-	///
-
-//	private String studentID;
-//	private HashMap<String, Double> skillLevels;
-//	private boolean changed = true;
-
-
-	///
-	/// Constructors
-	///
-
-//	StudentHistory(String studentID) {
-//		this.studentID = studentID;
-//	}
-
-
+class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
+{
+	// TODO: javadoc
 	///
 	/// Methods
 	///
-
-//	public String getStudentID() {
-//		return studentID;
-//	}
 
 	private void put(RecordKey key, String skill, int outcome) {
 		if (key == null || skill == null) {
@@ -53,7 +33,6 @@ class StudentHistory
 			put(skill, history);
 		}
 
-//		changed |=
 		history.put(key, outcome);
 	}
 
@@ -82,31 +61,15 @@ class StudentHistory
 	}
 
 	void buildWeights() {
-		if(isEmpty()) {
+		if (isEmpty()) {
 			return;
 		}
 
 		Set<String> skills = keySet();
-		for(String skill : skills) {
+		for (String skill : skills) {
 			get(skill).buildWeights();
 		}
 	}
-
-//	public HashMap<String, Double> getSkillLevels() {
-//		if(changed) {
-//			skillLevels = new HashMap<>(size());
-//
-//			Set<String> skills = keySet();
-//
-//			for (String skill : skills) {
-//				skillLevels.put(skill, get(skill).getSkillLevel());
-//			}
-//
-//			changed = false;
-//		}
-//
-//		return skillLevels;
-//	}
 
 
 	/**
@@ -116,8 +79,7 @@ class StudentHistory
 	 * <p/>
 	 * {@code RecordKey} is comparable to itself, lower keys representing more recent events.
 	 */
-	class RecordKey
-			implements Comparable<RecordKey>
+	class RecordKey implements Comparable<RecordKey>
 	{
 		long timestamp;
 		String questionID = "none";
@@ -128,10 +90,6 @@ class StudentHistory
 				this.questionID = questionID;
 			}
 		}
-
-//		String getQuestionID() {
-//			return questionID;
-//		}
 
 		long getTimestamp() {
 			return timestamp;
@@ -194,30 +152,15 @@ class StudentHistory
 	class Record
 	{
 		private int outcome;
-//		private double weight = 1.0;
 		private double level = 0.5;
 
 		Record(int outcome) {
 			this.outcome = outcome;
 		}
 
-//		Record(int outcome, double weight, double level) {
-//			this.outcome = outcome;
-//			this.weight = weight;
-//			this.level = level;
-//		}
-
 		int getOutcome() {
 			return outcome;
 		}
-
-//		double getWeight() {
-//			return weight;
-//		}
-
-//		void setWeight(double weight) {
-//			this.weight = weight;
-//		}
 
 		double getLevel() {
 			return level;
@@ -232,26 +175,25 @@ class StudentHistory
 	/**
 	 * Contains the history of a single skill for a given student and the current estimated level.
 	 */
-	class SkillHistory
-			extends ConcurrentSkipListMap<RecordKey, Record>
+	class SkillHistory extends ConcurrentSkipListMap<RecordKey, Record>
 	{
 		///
 		/// Internal members
 		///
 
 		// How many history entries to take into account when calculating different stats
-		private int historyLookupDepth = 10;
-		private double onePlusThreshold = 1 + 1.0/historyLookupDepth;
+		private static final int HISTORY_LOOKUP_DEPTH = 10;
+		private static final double ONE_PLUS_THRESHOLD = 1 + 1.0/HISTORY_LOOKUP_DEPTH;
 
-		// Store the most recent history (up to historyLookupDepth items) for faster processing of new items
+		// Store the most recent history (up to HISTORY_LOOKUP_DEPTH items) for faster processing of new items
 		private Vector<Double> recentWeights;
 		private Vector<Integer> recentOutcomes;
 
-		// Latest (up to historyLookupDepth) stats on the skill
+		// Latest (up to HISTORY_LOOKUP_DEPTH) stats on the skill
 		private double totalRecentWeight = 0.0; // recentWeights' total
-		private int totalRecentOutcomes = 0; // recentOutcomes' total
+		private int totalRecentOutcomes = 0;    // recentOutcomes' total
 
-		// Whether the history stores at least historyLookupDepth items
+		// Whether the history stores at least HISTORY_LOOKUP_DEPTH items
 		private int recentHistorySize = 0;
 		private RecordKey oldestInRecentHistory = null;
 
@@ -270,20 +212,9 @@ class StudentHistory
 		///
 
 		SkillHistory() {
-			recentWeights = new Vector<>(historyLookupDepth + 1);
-			recentOutcomes = new Vector<>(historyLookupDepth + 1);
+			recentWeights = new Vector<>(HISTORY_LOOKUP_DEPTH + 1);
+			recentOutcomes = new Vector<>(HISTORY_LOOKUP_DEPTH + 1);
 		}
-
-//		SkillHistory(int historyLookupDepth) {
-//			if (historyLookupDepth < 1) {
-//				historyLookupDepth = 1;
-//			}
-//			this.historyLookupDepth = historyLookupDepth;
-//			onePlusThreshold = 1 + 1.0/historyLookupDepth;
-//
-//			recentWeights = new Vector<>(historyLookupDepth + 1);
-//			recentOutcomes = new Vector<>(historyLookupDepth + 1);
-//		}
 
 
 		///
@@ -318,53 +249,6 @@ class StudentHistory
 			}
 
 			put(key, new Record(outcome));
-//
-//			// the record's weight for the purposes of skill level estimation
-//			double weight = (outcome == FAIL_A_SINGLE_SKILL || outcome == PASS)
-//			                ?1.0
-//			                :(onePlusThreshold - getSkillLevel(key));
-//
-//			// the value of the outcome used for skill level estimation
-//			int outcomeValue = outcome == PASS ?1 :0;
-//
-//			RecordKey lower = lowerKey(key); // the oldest more recent key in the history
-//
-//			if (lower == null) {
-//				if (rec == null) { // the key isn't in the history and there are no more recent keys in the history
-//					put(key, new Record(outcome));
-//					totalRecentWeight += weight;
-//					totalRecentOutcomes += outcomeValue;
-//
-//					recentWeights.add(0, weight);
-//					recentOutcomes.add(0, outcomeValue);
-//
-//					if (recentHistorySize == 0) {
-//						oldestInRecentHistory = key;
-//					}
-//
-//					if (recentHistorySize < historyLookupDepth) { // see if the recent history isn't full yet
-//						recentHistorySize++;
-//					}
-//					else {
-//						totalRecentWeight -= recentWeights.remove(recentHistorySize);
-//						totalRecentOutcomes -= recentOutcomes.remove(recentHistorySize);
-//
-//						oldestInRecentHistory = lowerKey(oldestInRecentHistory);
-//					}
-//				}
-//				else { // the key is already in the history and is the most recent one
-//					replace(key, new Record(outcome, weight));
-//					totalRecentWeight += weight - recentWeights.remove(0);
-//					totalRecentOutcomes += outcomeValue - recentOutcomes.remove(0);
-//
-//					recentWeights.add(0, weight);
-//					recentOutcomes.add(0, outcomeValue);
-//				}
-//			}
-//			else {
-//				put(key, new Record(outcome, weight));
-//				buildWeightsFrom(key);
-//			}
 		}
 
 		/**
@@ -389,180 +273,12 @@ class StudentHistory
 		 */
 		double getSkillLevel(RecordKey key) {
 			if (key == null ||
-			    floorKey(key) == null) { // if the passed key is null, return the estimate for the most recent moment
+			    ceilingKey(key) == null) { // if the passed key is null, return the estimate for the most recent moment
 				return getSkillLevel();
 			}
 
-			return get(floorKey(key)).getLevel();
-
-//			double totRecWeight = 0.0;
-//			int totRecOutcomes = 0;
-//
-//			RecordKey k = key;
-//			for (int i = 0; i < historyLookupDepth && k != null; i++, k = higherKey(k)) {
-//				Record rec = get(k);
-//
-//				if (rec == null) {
-//					i--;
-//				}
-//				else {
-//					totRecWeight += rec.getWeight();
-//					totRecOutcomes += rec.getOutcome() == 1 ?1 :0;
-//				}
-//			}
-//
-//			return totRecWeight == 0
-//			       ?0.5
-//			       :((double) totRecOutcomes)/totRecWeight;
+			return get(ceilingKey(key)).getLevel();
 		}
-
-		/**
-		 * Build the weight values for the records starting from {@code fromKey}.
-		 * <p>
-		 * The method recalculates weights for the records with keys that are {@code <= fromKey}, but only those that
-		 * might be affected by a change in the record at {@code fromKey}.
-		 * <p>
-		 * If {@code fromKey == null}, the method rebuilds the entire available history.
-		 *
-		 * @param fromKey
-		 * 		the key to rebuild the weights from; if it is {@code null}, this method calls {@link #buildWeights()}
-		 * 		instead
-		 */
-//		private void buildWeightsFrom(RecordKey fromKey) {
-//			if (isEmpty()) {
-//				return;
-//			}
-//			if (fromKey == null) {
-//				buildWeights();
-//				return;
-//			}
-//
-//			RecordKey k = fromKey;
-//
-//			// back up for historyLookupDepth - 1 records,
-//			// or to the last record, whichever occurs first
-//			for (int i = 0; i < historyLookupDepth - 1 && higherKey(k) != null; i++) {
-//				k = higherKey(k);
-//			}
-//
-//			// list all the keys for the records from that point down;
-//			// the list is tentative for a local rebuild
-//			Iterator<RecordKey> keys = headMap(k, true).keySet().descendingIterator();
-//
-//			// if the list isn't empty
-//			if (keys.hasNext()) {
-//				// similar to #recentWeights
-//				Vector<Double> recWeights = new Vector<>(historyLookupDepth + 1);
-//				// similar to #recentOutcomes
-//				Vector<Integer> recOutcomes = new Vector<>(historyLookupDepth + 1);
-//
-//				// similar to #totalRecentWeight
-//				double totRecWeight = 0.0;
-//				// similar to #totalRecentOutcomes
-//				int totRecOutcomes = 0;
-//
-//				// similar to #recentHistorySize
-//				int recHistorySize = 0;
-//				// similar to #oldestInRecentHistory
-//				RecordKey oldestInRecHistory = null;
-//
-//				// counts the length of history without records of failing multiple skills
-//				// (those are the only records that need their weights updated)
-//				int sinceLastMultipleFail = 0;
-//
-//				// go through all the records on the tentative list;
-//				// only need to update history while multiple-skill failures are within #historyLookupDepth from each other
-//				while (keys.hasNext() && sinceLastMultipleFail < historyLookupDepth) {
-//					k = keys.next();
-//
-//					// the record at the current key and the outcome recorded
-//					Record rec = get(k);
-//					int outcome = rec.getOutcome();
-//
-//					// for the keys that are at least as recent as fromKey,
-//					// we see how long it has been since the last time multiple-skill fail occurred
-//					if (k.compareTo(fromKey) <= 0) {
-//						if (outcome == FAIL_MULTIPLE_SKILLS) {
-//							sinceLastMultipleFail = 0;
-//						}
-//						else {
-//							sinceLastMultipleFail++;
-//						}
-//					}
-//
-//					// the record's weight for the purposes of skill level estimation
-//					double weight = getRecordWeight(totRecWeight, totRecOutcomes, outcome);
-//					int outcomeValue = outcome == PASS ?1 :0;
-//
-//					// if the record represents a multiple-skill fail, its weight get updated
-//					if (outcome == FAIL_MULTIPLE_SKILLS) {
-//						rec.setWeight(weight);
-//					}
-//
-//					totRecWeight += weight;
-//					totRecOutcomes += outcomeValue;
-//
-//					recWeights.add(0, weight);
-//					recOutcomes.add(0, outcomeValue);
-//
-//					if (recHistorySize == 0) {
-//						oldestInRecHistory = k;
-//					}
-//
-//					if (recHistorySize < historyLookupDepth) {
-//						recHistorySize++;
-//					}
-//					else {
-//						totRecWeight -= recWeights.remove(recentHistorySize);
-//						totRecOutcomes -= recOutcomes.remove(recentHistorySize);
-//
-//						oldestInRecHistory = lowerKey(oldestInRecHistory);
-//					}
-//				}
-//
-//				// if the recent history got affected,
-//				// refresh it by continuing all the way down to the very bottom record,
-//				// but the weights don't need to be recalculated
-//				if (k.compareTo(oldestInRecentHistory) <= 0) {
-//					while (keys.hasNext()) {
-//						k = keys.next();
-//						Record rec = get(k);
-//
-//						double weight = rec.getWeight(); // just use the previously calculated weight
-//						int outcomeValue = rec.getOutcome() == PASS ?1 :0;
-//
-//						totRecWeight += weight;
-//						totRecOutcomes += outcomeValue;
-//
-//						recWeights.add(0, weight);
-//						recOutcomes.add(0, outcomeValue);
-//
-//						if (recHistorySize == 0) {
-//							oldestInRecHistory = k;
-//						}
-//
-//						if (recHistorySize < historyLookupDepth) {
-//							recHistorySize++;
-//						}
-//						else {
-//							totRecWeight -= recWeights.remove(recentHistorySize);
-//							totRecOutcomes -= recOutcomes.remove(recentHistorySize);
-//
-//							oldestInRecHistory = lowerKey(oldestInRecHistory);
-//						}
-//					}
-//
-//					recentOutcomes = recOutcomes;
-//					recentWeights = recWeights;
-//
-//					totalRecentOutcomes = totRecOutcomes;
-//					totalRecentWeight = totRecWeight;
-//
-//					recentHistorySize = recHistorySize;
-//					oldestInRecentHistory = oldestInRecHistory;
-//				}
-//			}
-//		}
 
 		/**
 		 * Calculates the weights for all the records.
@@ -600,11 +316,6 @@ class StudentHistory
 				double weight = getRecordWeight(totalRecentWeight, totalRecentOutcomes, outcome);
 				int outcomeValue = outcome == PASS ?1 :0;
 
-				// if the record represents failing multiple skills, its weight needs updating
-//				if (outcome == FAIL_MULTIPLE_SKILLS) {
-//					rec.setWeight(weight);
-//				}
-
 				totalRecentWeight += weight;
 				totalRecentOutcomes += outcomeValue;
 
@@ -617,7 +328,7 @@ class StudentHistory
 					oldestInRecentHistory = k;
 				}
 
-				if (recentHistorySize < historyLookupDepth) {
+				if (recentHistorySize < HISTORY_LOOKUP_DEPTH) {
 					recentHistorySize++;
 				}
 				else {
@@ -633,9 +344,9 @@ class StudentHistory
 		 * Calculates the weight of a response given its outcome.
 		 *
 		 * @param totRecWeight
-		 * 		the total weight of the previous {@link #historyLookupDepth} records
+		 * 		the total weight of the previous {@link #HISTORY_LOOKUP_DEPTH} records
 		 * @param totRecOutcomes
-		 * 		the total of the outcomes of the previous {@link #historyLookupDepth} records
+		 * 		the total of the outcomes of the previous {@link #HISTORY_LOOKUP_DEPTH} records
 		 * @param outcome
 		 * 		the outcome of this response; should be {@link #PASS}, {@link #FAIL_A_SINGLE_SKILL}, or {@link
 		 * 		#FAIL_MULTIPLE_SKILLS}
@@ -645,9 +356,47 @@ class StudentHistory
 		private double getRecordWeight(double totRecWeight, double totRecOutcomes, int outcome) {
 			return (outcome == FAIL_A_SINGLE_SKILL || outcome == PASS)
 			       ?1.0
-			       :(onePlusThreshold - (totRecWeight == 0
-			                             ?0.5
-			                             :totRecOutcomes/totRecWeight));
+			       :(ONE_PLUS_THRESHOLD - (totRecWeight == 0
+			                               ?0.5
+			                               :totRecOutcomes/totRecWeight));
+		}
+
+		private static final int TREND_LOOKUP_DEPTH = 10;
+
+		/**
+		 * Calculates the trend in the skill level.
+		 *
+		 * @return skill level trend
+		 */
+		double trend() {
+			if (isEmpty()) {
+				return 0;
+			}
+
+			// Using the Normal Equation for linear regressions
+
+			SimpleMatrix
+					// The matrix of columns, (1, i)
+					X = new SimpleMatrix(2, size() > TREND_LOOKUP_DEPTH ?TREND_LOOKUP_DEPTH :size()),
+
+					// The vector of values, skillLevel(i)
+					y = new SimpleMatrix(X.numCols(), 1);
+
+			RecordKey k = firstKey();
+
+			// Initializing the matrices using the last #TREND_LOOKUP_DEPTH records
+			for (int i = y.numRows() - 1; i >= 0; i--, k = higherKey(k)) {
+				X.set(0, i, 1);
+				X.set(1, i, i);
+				y.set(i, 0, get(k).getLevel());
+			}
+
+			// Applying the Normal Equation to get the coefficients:
+			// theta_0 is the y-intercept, theta_1 is the slope
+			SimpleMatrix theta = X.mult(X.transpose()).pseudoInverse().mult(X).mult(y);
+
+			// Returning theta_1
+			return theta.get(1, 0);
 		}
 	}
 }

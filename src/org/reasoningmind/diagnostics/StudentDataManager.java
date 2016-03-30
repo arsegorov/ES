@@ -18,16 +18,9 @@ import java.util.Vector;
 class StudentDataManager
 		extends HashMap<String, StudentHistory>
 {
-//	private Diagnostics hostApp;
-
 	private Vector<String> studentIDs;
 	private Vector<String> questionIDs;
 	private HashMap<String, Vector<String>> questionSkills;
-//	private HashMap<String, Integer> questionMultiplicity;
-
-//	StudentDataManager(Diagnostics hostApp) {
-//		this.hostApp = hostApp;
-//	}
 
 	void loadCSV(File csv) {
 		try {
@@ -75,13 +68,12 @@ class StudentDataManager
 			Class.forName("org.sqlite.JDBC");
 			Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
 
-			Statement stat = connection.createStatement();
-			ResultSet rs = stat.executeQuery("SELECT DISTINCT studentID FROM outcomes;");
-
 			if (studentIDs == null) {
 				studentIDs = new Vector<>();
 			}
 
+			Statement stat = connection.createStatement();
+			ResultSet rs = stat.executeQuery("SELECT DISTINCT studentID FROM outcomes;");
 			while (rs.next()) {
 				studentIDs.add(rs.getString(1));
 			}
@@ -99,13 +91,12 @@ class StudentDataManager
 			Class.forName("org.sqlite.JDBC");
 			Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
 
-			Statement stat = connection.createStatement();
-			ResultSet rs = stat.executeQuery("SELECT DISTINCT questionID FROM outcomes;");
-
 			if (questionIDs == null) {
 				questionIDs = new Vector<>();
 			}
 
+			Statement stat = connection.createStatement();
+			ResultSet rs = stat.executeQuery("SELECT DISTINCT questionID FROM outcomes;");
 			while (rs.next()) {
 				questionIDs.add(rs.getString(1));
 			}
@@ -129,21 +120,16 @@ class StudentDataManager
 
 			if (questionSkills == null) {
 				questionSkills = new HashMap<>();
-//				questionMultiplicity = new HashMap<>();
 			}
 
 			for (String questionID : questionIDs) {
-				rs = stat.executeQuery(
-						"SELECT DISTINCT skill FROM outcomes WHERE questionID = '" + questionID + "';");
-
 				Vector<String> skills = new Vector<>();
+				questionSkills.put(questionID, skills);
 
+				rs = stat.executeQuery("SELECT DISTINCT skill FROM outcomes WHERE questionID = '" + questionID + "';");
 				while (rs.next()) {
 					skills.add(rs.getString(1));
 				}
-
-				questionSkills.put(questionID, skills);
-//				questionMultiplicity.put(questionID, skills.size());
 			}
 
 			connection.close();
@@ -169,17 +155,6 @@ class StudentDataManager
 //			System.out.println(
 //					"Question skills are missing for " + (questionID != null ?"\"" + questionID + "\"" :"NULL"));
 //			return null;
-//		}
-//	}
-
-//	int getQuestionMultiplicity(String questionID) {
-//		if (questionID != null && questionMultiplicity != null) {
-//			return questionMultiplicity.get(questionID);
-//		}
-//		else {
-//			System.out.println(
-//					"Question skills are missing for " + (questionID != null ?"\"" + questionID + "\"" :"NULL"));
-//			return 0;
 //		}
 //	}
 
@@ -229,55 +204,5 @@ class StudentDataManager
 
 //	void readCLP(File clp) {
 //
-//	}
-
-//	void dbConnectionTest() {
-//		try {
-//			Class.forName("org.sqlite.JDBC");
-//			Connection connection = DriverManager.getConnection("jdbc:sqlite:test.db");
-//
-//			Statement stat = connection.createStatement();
-//			stat.executeUpdate("drop table if exists people;");
-//			stat.executeUpdate("create table people (name, occupation);");
-//
-//			PreparedStatement prep = connection.prepareStatement(
-//					"insert into people values (?, ?);");
-//			prep.setString(1, "Gandhi");
-//			prep.setString(2, "politics");
-//			prep.addBatch();
-//			prep.setString(1, "Turing");
-//			prep.setString(2, "computers");
-//			prep.addBatch();
-//			prep.setString(1, "Wittgenstein");
-//			prep.setString(2, "smartypants");
-//			prep.addBatch();
-//
-//			connection.setAutoCommit(false);
-//			prep.executeBatch();
-//			connection.setAutoCommit(true);
-//
-//			ResultSet rs = stat.executeQuery("select * from people;");
-//			while (rs.next()) {
-//				System.out.println("name = " + rs.getString("name"));
-//				System.out.println("job = " + rs.getString("occupation"));
-//			}
-//			rs.close();
-//			connection.close();
-//		}
-//		catch (ClassNotFoundException classNotFoundException) {
-//			JOptionPane.showMessageDialog(
-//					hostApp,
-//					"Class \"org.sqlite.JDBC\" is not found.",
-//					"Error",
-//					JOptionPane.ERROR_MESSAGE);
-//
-//		}
-//		catch (Exception e) {
-//			JOptionPane.showMessageDialog(hostApp,
-//			                              e.getClass().getName() + " in StudentDataManager.dbConnectionTest(): " +
-//			                              e.getMessage(),
-//			                              "Error",
-//			                              JOptionPane.ERROR_MESSAGE);
-//		}
 //	}
 }
