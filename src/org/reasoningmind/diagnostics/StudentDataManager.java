@@ -222,6 +222,8 @@ class StudentDataManager
 			catch (ClassNotFoundException | SQLException e) {
 				e.printStackTrace();
 			}
+
+			history.buildWeights();
 		}
 	}
 

@@ -10,5 +10,6 @@
     <orderEntry type="library" name="CLIPSJNI" level="application" />
     <orderEntry type="library" name="sqlite-jdbc-3.8.11.2" level="application" />
     <orderEntry type="library" name="commons-csv-1.2" level="application" />
+    <orderEntry type="library" name="ejml-0.29" level="application" />
   </component>
 </module>

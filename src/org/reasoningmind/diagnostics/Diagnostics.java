@@ -404,15 +404,14 @@ public class Diagnostics extends JFrame implements ActionListener
 				outputArea.append("\t" + skill + "\n");
 
 				StudentHistory.SkillHistory skillHistory = history.get(skill);
-//			System.out.println(String.format("\t\t" + skillHistory.size() + "\t%1.3f", skillHistory.getSkillLevel()));
 				Set<StudentHistory.RecordKey> responses = skillHistory.keySet();
 
 				for (StudentHistory.RecordKey
 						response : responses) {
 					outputArea.append(
-							"\t\t" + response.getTimestamp() +
-							":\t" + skillHistory.get(response).getOutcome() +
-							" -> " + skillHistory.getSkillLevel(response) + "\n");
+							String.format("\t\t%d:\t%d -> %1.3f\n", response.getTimestamp(),
+							              skillHistory.get(response).getOutcome(),
+							              skillHistory.getSkillLevel(response)));
 				}
 			}
 		}
