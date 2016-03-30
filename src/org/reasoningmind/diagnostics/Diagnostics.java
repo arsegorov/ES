@@ -214,8 +214,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/rules.clp");
 
 //		TODO: all the action is here
-		dataManager.loadCSV(new File("C:\\Users\\aegorov\\Desktop\\sample outcomes.csv"));
-//		dataManager.loadCSV(new File("C:\\Users\\ars\\Desktop\\sample outcomes.csv"));
+		dataManager.loadCSV(new File(System.getProperty("user.home") + "\\Desktop\\sample outcomes.csv"));
 		dataManager.refresh();
 		dataManager.initHistory();
 	}
@@ -363,6 +362,7 @@ public class Diagnostics extends JFrame implements ActionListener
 			new FactsFrame(this, factFilterTF.getText());
 		}
 		else if (e.getSource() == clipsCommandTF) {
+			// TODO: add a separate control for showing student info
 //			eval(clipsCommandTF.getText());
 //			clipsCommandTF.setText("");
 //			clips.printBanner();
@@ -378,16 +378,20 @@ public class Diagnostics extends JFrame implements ActionListener
 
 			for (String skill : skills) {
 				StudentHistory.SkillHistory skillHistory = history.get(skill);
-				outputArea.append("\t" + skill + ": " + skillHistory.trend() + "\n");
+				outputArea.append(String.format("\t%s: %1.3f\n",
+				                                skill,
+				                                skillHistory.trend()
+				));
 
 				Set<StudentHistory.RecordKey> responses = skillHistory.keySet();
 
 				for (StudentHistory.RecordKey
 						response : responses) {
-					outputArea.append(
-							String.format("\t\t%d:\t%d -> %1.3f\n", response.getTimestamp(),
-							              skillHistory.get(response).getOutcome(),
-							              skillHistory.getSkillLevel(response)));
+					outputArea.append(String.format("\t\t%d:\t%d -> %1.3f\n",
+					                                response.getTimestamp(),
+					                                skillHistory.get(response).getOutcome(),
+					                                skillHistory.getSkillLevel(response)
+					));
 				}
 			}
 		}
