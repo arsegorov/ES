@@ -1,63 +1,165 @@
-;*************************************************************************;
-; A fact of this type stores the outcome of a single input from a student ;
-;*************************************************************************;
-(deftemplate input
-	"an input from a student"
-	; This stores the student's ID
-	(slot student-ID
-		(type SYMBOL)
-		(default ?DERIVE))
-	; This stores the timestamp of the student's answer
-	(slot timestamp
-		(type INTEGER)
-		(default ?DERIVE))
-	; This stores the list of all the skill IDs associated with the question that was asked of the student
-	(multislot skills
-		(type SYMBOL)
-		(default ?DERIVE))
-	; This stores the whether the student's answer was correct or incorrect
-	(slot outcome
-		(type INTEGER)
-		(allowed-integers 0 1))
-	; This is an auxiliary slot used to check if the slot was accounted for in the current counting
-	(slot accounted-for
-		(type INTEGER)
-		(allowed-integers 0 1)
-		(default 0)))
-
-;*****************************************************************;
-; A fact of this type stores the information about a single skill ;
-;*****************************************************************;
+;;;
+;;; A fact of this type stores the information about a single skill
+;;;
 (deftemplate skill
-	"a skill's properties"
+	"A skill's properties"
 	; This is the skill's ID
-	(slot name
+	(slot ID
+		(type STRING)
+		(default ?NONE)
+	)
+	
+	; Whether the skill is checked in the course.
+	; Some skills might not be checked even though they are prerequisites for other skills
+	(slot checked
 		(type SYMBOL)
-		(default ?DERIVE))
+		(allowed-symbols TRUE FALSE)
+		(default TRUE)
+	)
+	
+	; When the skill appears for the first time in the course.
+	; 0 means that the skill is expected to be introduced by the beginning of the course
+	(slot first-lesson
+		(type INTEGER)
+		(default ?NONE)
+	)
+	
+	; The number of the lesson by which the skill is expected to be formed
+	; (not necessarily in full proficiency)
+	(slot formed-by
+		(type INTEGER)
+		(default 1000)
+	)
+	
+	; The number of the lesson by which the skill is expected to be developed to full proficiency
+	(slot proficient-by
+		(type INTEGER)
+		(default 1000)
+	)
+	
 	; This is the categorization of the skill in the skills' hierarchy
-	(multislot categories
-		(type SYMBOL)
-		(default ?DERIVE)))
+	(multislot depends-on
+		(type STRING)
+		(default "none")
+	)
+)
+
+;;;
+;;; A fact of this type stores the statistics about
+;;; the level and trend of a given skill for a given student
+;;;
+(deftemplate skill-stats
+	"A given student's stats for a given skill"
+	; ID of the student for whom the stats are stored
+	(slot student-ID
+		(type STRING)
+		(default ?NONE)
+	)
 		
-;*****************************************************************;
-;  ;
-;*****************************************************************;
-(deftemplate single-stats
-	""
+	; ID of the skill for which the stats are stored
+	(slot skill-ID
+		(type STRING)
+		(default ?NONE)
+	)
+		
+	; The estimated level of proficiency
+	(slot level
+		(type SYMBOL)
+		(default ?NONE)
+		(allowed-symbols F D C B A)
+	)
+		
+	; The recent dynamic of the skill
+	(slot trend
+		(type SYMBOL)
+		(default ?NONE)
+		(allowed-symbols down even up)
+	)
+)
+
+;;;
+;;; 
+;;;
+(deftemplate student
+	"A student's ID and place in the course"
+	; 
+	(slot ID
+		(type STRING)
+		(default ?NONE)
+	)
+	
+	; 
+	(slot lesson
+		(type INTEGER)
+		(default ?NONE)
+	)
+)
+
+;;;
+;;; 
+;;;
+(deftemplate not-concerned-about
+	"Reason for not being concerned about a student's skill"
 	; 
 	(slot student-ID
-		(type SYMBOL)
-		(default ?DERIVE))
+		(type STRING)
+		(default ?NONE)
+	)
+	
 	; 
 	(slot skill-ID
-		(type SYMBOL)
-		(default ?DERIVE))
+		(type STRING)
+		(default ?NONE)
+	)
+	
 	; 
-	(slot count
-		(type INTEGER)
-		(default ?DERIVE))
-	;
-	(slot count-correct
-		(type INTEGER)
-		(default ?DERIVE)
-		(allowed-integers 0 1)))
+	(slot reason
+		(type STRING)
+	)
+)
+
+;;;
+;;; 
+;;;
+(deftemplate slightly-concerned-about
+	"Reason for being slightly concerned about a student's skill"
+	; 
+	(slot student-ID
+		(type STRING)
+		(default ?NONE)
+	)
+	
+	; 
+	(slot skill-ID
+		(type STRING)
+		(default ?NONE)
+	)
+	
+	; 
+	(slot reason
+		(type STRING)
+	)
+)
+
+;;;
+;;; 
+;;;
+(deftemplate highly-concerned-about
+	"Reason for being highly concerned about a student's skill"
+	; 
+	(slot student-ID
+		(type STRING)
+		(default ?NONE)
+	)
+	
+	; 
+	(slot skill-ID
+		(type STRING)
+		(default ?NONE)
+	)
+	
+	; 
+	(slot reason
+		(type STRING)
+	)
+)

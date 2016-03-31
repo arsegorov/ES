@@ -1,0 +1,47 @@
+(deffacts arithmetic-skills
+; properties of natural numbers
+	(skill (ID "nn: expanded form") (checked FALSE) (first-lesson 0) (formed-by 1) (proficient-by 1))
+	(skill (ID "nn: split <= 10") (checked FALSE) (first-lesson 0) (formed-by 1) (proficient-by 1))
+	
+; mental addition of natural numbers
+	(skill (ID "+: 1d and 1d NC") (first-lesson 0) (formed-by 1) (proficient-by 1))
+	(skill (ID "+: 10 and 1d") (first-lesson 0) (formed-by 1) (proficient-by 1))
+	(skill (ID "+: 1d and 1d C") (first-lesson 0) (formed-by 1) (proficient-by 1)
+		(depends-on "+: 10 and 1d" "nn: split <= 10")
+	)
+	(skill (ID "+: 2R and 1d") (first-lesson 0) (formed-by 1) (proficient-by 1))
+	(skill (ID "+: 2R and 2R") (first-lesson 0) (formed-by 1) (proficient-by 1)
+		(depends-on "+: 1d and 1d NC")
+	)
+	(skill (ID "+: 2R and 2d") (first-lesson 0) (formed-by 1) (proficient-by 1)
+		(depends-on "nn: expanded form" "+: 2R and 2R" "+: 2R and 1d")
+	)
+	(skill (ID "+: 2d and 1d NC") (first-lesson 0) (formed-by 1) (proficient-by 1)
+		(depends-on "nn: expanded form" "+: 1d and 1d NC" "+: 2R and 1d")
+	)
+	(skill (ID "+: 2d and 1d C") (first-lesson 0) (formed-by 1) (proficient-by 1)
+		(depends-on "nn: expanded form" "+: 1d and 1d C" "+: 2R and 2d")
+	)
+	(skill (ID "+: 2d and 2d NC") (first-lesson 0) (formed-by 1) (proficient-by 1)
+		(depends-on "nn: expanded form" "+: 1d and 1d NC" "+: 2R and 2R")
+	)
+	(skill (ID "+: 2d and 2d C") (first-lesson 0) (formed-by 1) (proficient-by 1)
+		(depends-on "nn: expanded form" "+: 1d and 1d C" "+: 2R and 2R" "+: 2R and 2d")
+	)
+	
+; evaluation of expressions
+	(skill (ID "+: more than 2 1d") (first-lesson 0) (formed-by 1) (proficient-by 1)
+		(depends-on "+: 1d and 1d C")
+	)
+	(skill (ID "+: more than 2 2d") (first-lesson 0) (formed-by 1) (proficient-by 1)
+		(depends-on "+: 2d and 2d C")
+	)
+	
+; column addition of natural numbers
+	(skill (ID "c+: 3d and 3d NC") (first-lesson 15) (formed-by 16) (proficient-by 20)
+		(depends-on "+: 1d and 1d NC")
+	)
+	(skill (ID "c+: 3d and 1d 1C") (first-lesson 16) (formed-by 17) (proficient-by 20)
+		(depends-on "+: 1d and 1d NC" "+: 1d and 1d C"  "+: more than 2 small summands")
+	)
+)
