@@ -205,38 +205,34 @@ class StudentDataManager
 
 		return history;
 	}
-
-	void initHistory() {
-		for (String student : studentIDs) {
-			StudentHistory history = new StudentHistory();
-			put(student, history);
-
-			try {
-				Class.forName("org.sqlite.JDBC");
-				Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
-
-				Statement stat = connection.createStatement();
-				ResultSet rs = stat.executeQuery(
-						"SELECT DISTINCT timestamp, questionID, isCorrect FROM outcomes WHERE studentID='" +
-						student + "';");
-
-				while (rs.next()) {
-					Long timestamp = rs.getLong("timestamp");
-					String questionID = rs.getString("questionID");
-					boolean isCorrect = rs.getBoolean("isCorrect");
-
-					history.put(timestamp, questionID, new HashSet<>(questionSkills.get(questionID)), isCorrect);
-				}
-			}
-			catch (ClassNotFoundException | SQLException e) {
-				e.printStackTrace();
-			}
-
-			history.buildWeights();
-		}
-	}
-
-//	void readCLP(File clp) {
 //
+//	void initHistory() {
+//		for (String student : studentIDs) {
+//			StudentHistory history = new StudentHistory();
+//			put(student, history);
+//
+//			try {
+//				Class.forName("org.sqlite.JDBC");
+//				Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
+//
+//				Statement stat = connection.createStatement();
+//				ResultSet rs = stat.executeQuery(
+//						"SELECT DISTINCT timestamp, questionID, isCorrect FROM outcomes WHERE studentID='" +
+//						student + "';");
+//
+//				while (rs.next()) {
+//					Long timestamp = rs.getLong("timestamp");
+//					String questionID = rs.getString("questionID");
+//					boolean isCorrect = rs.getBoolean("isCorrect");
+//
+//					history.put(timestamp, questionID, new HashSet<>(questionSkills.get(questionID)), isCorrect);
+//				}
+//			}
+//			catch (ClassNotFoundException | SQLException e) {
+//				e.printStackTrace();
+//			}
+//
+//			history.buildWeights();
+//		}
 //	}
 }
