@@ -37,10 +37,24 @@
 		(default 1000)
 	)
 	
-	; This is the categorization of the skill in the skills' hierarchy
+	; The other skills this skill directly depends on
 	(multislot depends-on
 		(type STRING)
 		(default "none")
+	)
+	
+	; Whether the answer choices are typically limited to a number of options 
+	(slot limited-choices
+		(type SYMBOL)
+		(allowed-symbols VERY YES NO)
+		(default NO)
+	)
+	
+	; 
+	(slot essential
+		(type SYMBOL)
+		(allowed-symbols TRUE FALSE)
+		(default FALSE)
 	)
 )
 
@@ -48,7 +62,7 @@
 ;;; A fact of this type stores the statistics about
 ;;; the level and trend of a given skill for a given student
 ;;;
-(deftemplate skill-stats
+(deftemplate student-skill
 	"A given student's stats for a given skill"
 	; ID of the student for whom the stats are stored
 	(slot student-ID
@@ -73,7 +87,7 @@
 	(slot trend
 		(type SYMBOL)
 		(default ?NONE)
-		(allowed-symbols down even up)
+		(allowed-symbols DOWN EVEN UP)
 	)
 )
 
@@ -98,7 +112,7 @@
 ;;;
 ;;; 
 ;;;
-(deftemplate not-concerned-about
+(deftemplate judgement
 	"Reason for not being concerned about a student's skill"
 	; 
 	(slot student-ID
@@ -112,8 +126,14 @@
 		(default ?NONE)
 	)
 	
+	;
+	(slot concern
+		(type SYMBOL)
+		(allowed-symbols NO SLIGHT HIGH)
+	)
+	
 	; 
-	(slot reason
+	(multislot reason
 		(type STRING)
 	)
 )
@@ -121,45 +141,11 @@
 ;;;
 ;;; 
 ;;;
-(deftemplate slightly-concerned-about
-	"Reason for being slightly concerned about a student's skill"
-	; 
-	(slot student-ID
-		(type STRING)
-		(default ?NONE)
-	)
-	
-	; 
-	(slot skill-ID
-		(type STRING)
-		(default ?NONE)
-	)
-	
-	; 
-	(slot reason
-		(type STRING)
-	)
-)
-
-;;;
-;;; 
-;;;
-(deftemplate highly-concerned-about
-	"Reason for being highly concerned about a student's skill"
-	; 
-	(slot student-ID
-		(type STRING)
-		(default ?NONE)
-	)
-	
-	; 
-	(slot skill-ID
-		(type STRING)
-		(default ?NONE)
-	)
-	
-	; 
-	(slot reason
-		(type STRING)
+(deffunction print$ ($?multi)
+	(if (eq (first$ $?multi) (create$)) then
+		(printout t crlf)
+	else
+		(printout t "    " (implode$ (first$ $?multi)) crlf)
+		(print$ (rest$ $?multi))
 	)
 )

@@ -1,0 +1,60 @@
+CLIPS> (run)
+  There is a HIGH concern about
+  CHARLIE's level of
+
+    WP: WHAT IS FOUND
+
+    "Initially HIGH concern."
+    "The student has not formed this skill and isn't making progress."
+
+
+  There is a SLIGHT concern about
+  CHARLIE's level of
+
+    WP: WHAT IS FOUND
+
+    "Initially SLIGHT concern."
+    "The student isn't making progress on questions with very limited answer choices."
+    "The student might be making random guesses."
+
+
+  There is a HIGH concern about
+  CHARLIE's level of
+
+    ADDITION: 1-DIGIT AND 1-DIGIT, WITH CARRYING
+
+    "Initially HIGH concern."
+    "The student has not formed this skill and isn't making progress."
+
+
+  There is a HIGH concern about
+  CHARLIE's level of
+
+    ADDITION: 10 AND 1-DIGIT
+
+    "Initially HIGH concern."
+    "The student has not formed this skill and isn't making progress."
+
+
+  There is a SLIGHT concern about
+  CHARLIE's level of
+
+    ADDITION: 1-DIGIT AND 1-DIGIT, WITH CARRYING
+
+    "Changed to SLIGHT concern."
+    "There is a HIGH concern about a prerequisite, ADDITION: 10 AND 1-DIGIT, that requires attention first."
+    ""
+    "Initially HIGH concern."
+    "The student has not formed this skill and isn't making progress."
+
+
+  There is a SLIGHT concern about
+  BOB's level of
+
+    ADDITION: 1-DIGIT AND 1-DIGIT, NO CARRYING
+
+    "Initially SLIGHT concern."
+    "The student appears to struggle with the increasing difficulty of the problems."
+
+
+CLIPS> 
