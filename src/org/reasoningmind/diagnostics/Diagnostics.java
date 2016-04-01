@@ -24,18 +24,12 @@ import java.util.Set;
  */
 public class Diagnostics extends JFrame implements ActionListener
 {
-
 	// Data handlers
 	// Need only one of each for the life of the application
 	private final JFileChooser fileChooser = new JFileChooser();
 
-	// Parts of user interface
-	private JTextField filePathTF, clipsCommandTF, factFilterTF;
-	private JTextArea outputArea;
-
 	// Application text resources
 	private ResourceBundle resources;
-
 	ResourceBundle getResources() {
 		return resources;
 	}
@@ -47,14 +41,9 @@ public class Diagnostics extends JFrame implements ActionListener
 	 * In IntelliJ Idea, the option is specified under VM Options in "Run/Debug Configurations"
 	 */
 	private Environment clips;
-
 	Environment getClips() {
 		return clips;
 	}
-
-	// Concurrency-related fields
-	private boolean isExecuting = false;
-	private Thread executionThread;
 
 	private final StudentDataManager dataManager = new StudentDataManager();
 
@@ -69,16 +58,13 @@ public class Diagnostics extends JFrame implements ActionListener
 	 */
 	private Diagnostics() {
 		// Accessing the resources file
-		try {
-			resources = ResourceBundle.getBundle(
-					"org.reasoningmind.diagnostics.resources.Diagnostics",
-					Locale.getDefault()
-			);
-		}
-		catch (MissingResourceException mre) {
-			mre.printStackTrace();
+		if (!loadResources()) {
 			return;
 		}
+
+//		TODO: all the action is here
+//		dataManager.loadCSV(new File(System.getProperty("user.home") + "\\Desktop\\sample outcomes.csv"));
+		dataManager.fetchStudentsAndQuestions();
 
 		// **************************
 		// Setting up the main window
@@ -87,19 +73,26 @@ public class Diagnostics extends JFrame implements ActionListener
 		this.getContentPane().setLayout(new BorderLayout());
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		// The main area of the layout
+		// The main panel of the layout
 		JPanel mainPanel = new JPanel(new BorderLayout());
 		mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
-		// A cheerful image on the main window :)
-//		this.addCheerfulIcon(mainPanel);
+		this.add(mainPanel, BorderLayout.CENTER);
+
 		// The "command line interface"
 		this.addClipsPanel(mainPanel);
+
 		// The input file selection area
 //		this.addFileSelectionPanel();
+
 		// The facts filter area
 //		this.addFilterPanel();
 
-		this.add(mainPanel, BorderLayout.CENTER);
+		this.addStudentSelectionPanel();
+		studentSelector.setModel(new DefaultComboBoxModel<>(dataManager.getStudentIDs()));
+		studentSelector.insertItemAt("", 0);
+		studentSelector.setSelectedIndex(0);
+
+
 		// Aligning the layout properly
 		this.pack();
 		this.setLocation(300, 200);
@@ -107,17 +100,37 @@ public class Diagnostics extends JFrame implements ActionListener
 		this.setVisible(true);
 
 		clips = new Environment();
-		outputArea.append(Environment.getVersion() + "\n" + resources.getString("CLIPSPrompt"));
+
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/defs.clp");
+		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/skills.clp");
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/rules.clp");
 
-//		TODO: all the action is here
-//		dataManager.loadCSV(new File(System.getProperty("user.home") + "\\Desktop\\sample outcomes.csv"));
-		dataManager.refresh();
-		dataManager.initHistory();
+		outputArea.append(Environment.getVersion() + "\n" + resources.getString("CLIPSPrompt"));
 	}
 
-	private void addCheerfulIcon(JPanel mainPanel) {
+	private boolean loadResources() {
+		try {
+			resources = ResourceBundle.getBundle(
+					"org.reasoningmind.diagnostics.resources.Diagnostics",
+					Locale.getDefault()
+			);
+		}
+		catch (MissingResourceException mre) {
+			mre.printStackTrace();
+			return false;
+		}
+
+		return true;
+	}
+
+	private void addBorder(JPanel panel, String resourceID) {
+		panel.setBorder(BorderFactory.createTitledBorder(
+				BorderFactory.createEtchedBorder(),
+				resources.getString(resourceID)
+		));
+	}
+
+	private void addCheerfulIcon(JPanel parent) {
 		JLabel iconLabel = new JLabel();
 		iconLabel.setIcon(
 				new ImageIcon(
@@ -126,9 +139,11 @@ public class Diagnostics extends JFrame implements ActionListener
 				)
 		);
 
-		mainPanel.add(iconLabel, BorderLayout.WEST);
+		parent.add(iconLabel, BorderLayout.WEST);
 	}
 
+	// Parts of user interface
+	private JTextField factFilterTF;
 	private void addFilterPanel() {
 		JPanel filterPanel = new JPanel(new BorderLayout());
 		addBorder(filterPanel, "MainWindowFilterPrompt");
@@ -147,6 +162,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		this.add(filterPanel, BorderLayout.SOUTH);
 	}
 
+	private JTextField filePathTF;
 	private void addFileSelectionPanel() {
 		JPanel fileSelectionPanel = new JPanel(new BorderLayout());
 		addBorder(fileSelectionPanel, "MainWindowInputFilePrompt");
@@ -172,7 +188,9 @@ public class Diagnostics extends JFrame implements ActionListener
 		this.add(fileSelectionPanel, BorderLayout.NORTH);
 	}
 
-	private void addClipsPanel(JPanel mainPanel) {
+	private JTextField clipsCommandTF;
+	private JTextArea outputArea;
+	private void addClipsPanel(JPanel parent) {
 		JPanel clipsPanel = new JPanel(new BorderLayout());
 
 		// The log text area
@@ -199,14 +217,22 @@ public class Diagnostics extends JFrame implements ActionListener
 
 		clipsPanel.add(promptPanel, BorderLayout.SOUTH);
 
-		mainPanel.add(clipsPanel, BorderLayout.CENTER);
+		parent.add(clipsPanel, BorderLayout.CENTER);
 	}
 
-	private void addBorder(JPanel panel, String resourceID) {
-		panel.setBorder(BorderFactory.createTitledBorder(
-				BorderFactory.createEtchedBorder(),
-				resources.getString(resourceID)
-		));
+	private JComboBox<String> studentSelector;
+	private void addStudentSelectionPanel() {
+		JPanel studentSelectionPanel = new JPanel(new BorderLayout());
+		addBorder(studentSelectionPanel, "MainWindowStudentSelectorPrompt");
+
+		studentSelector = new JComboBox<>();
+		studentSelector.addActionListener(this);
+		studentSelector.setEditable(false);
+		studentSelector.setPreferredSize(new Dimension(200, 24));
+		studentSelectionPanel.add(studentSelector, BorderLayout.NORTH);
+		addCheerfulIcon(studentSelectionPanel);
+
+		this.add(studentSelectionPanel, BorderLayout.WEST);
 	}
 
 
@@ -271,6 +297,10 @@ public class Diagnostics extends JFrame implements ActionListener
 	}
 
 
+	// Concurrency-related fields
+	private boolean isExecuting = false;
+//	private Thread executionThread;
+
 //	/**
 //	 * Invokes the <code>(run)</code> command in the CLIPS environment in a separate thread.
 //	 */
@@ -301,6 +331,8 @@ public class Diagnostics extends JFrame implements ActionListener
 //		executionThread.start();
 //	}
 
+
+	private boolean studentStats = false;
 
 	/**
 	 * This method is inherited from the ActionListener interface, and is invoked whenever a registered event occurs.
@@ -352,38 +384,55 @@ public class Diagnostics extends JFrame implements ActionListener
 			new FactsFrame(this, factFilterTF.getText());
 		}
 		else if (e.getSource() == clipsCommandTF) {
-			// TODO: add a separate control for showing student info
-//			eval(clipsCommandTF.getText());
-//			clipsCommandTF.setText("");
-//			clips.printBanner();
-			outputArea.setText("");
+			if(studentStats) {
+				outputArea.append("\n" + resources.getString("CLIPSPrompt"));
+				studentStats = false;
+			}
 
-			String studentID = dataManager.getStudentIDs().get(Integer.parseInt(clipsCommandTF.getText()));
+			eval(clipsCommandTF.getText());
+			outputArea.setCaretPosition(outputArea.getText().length());
+			clipsCommandTF.setText("");
+			clips.printBanner();
+		}
+		else if (e.getSource() == studentSelector) {
+			String studentID = (String) studentSelector.getSelectedItem();
+			if (studentID.equals(""))
+			{
+				return;
+			}
+			studentStats = true;
+
+			outputArea.setText("");
 			outputArea.append(studentID + "\n");
 
-			StudentHistory
-					history = dataManager.get(studentID);
+			StudentHistory history = dataManager.getHistory(studentID);
 
 			Set<String> skills = history.keySet();
 
 			for (String skill : skills) {
 				StudentHistory.SkillHistory skillHistory = history.get(skill);
-				outputArea.append(String.format("\t%s: %1.3f\n",
+				outputArea.append(String.format("  %s:\n                      TREND=%1.3f\n",
 				                                skill,
 				                                skillHistory.trend()
 				));
 
 				Set<StudentHistory.RecordKey> responses = skillHistory.keySet();
 
+				final String[] OUTCOME = {"fail ", "pass ", "fail*"};
+
 				for (StudentHistory.RecordKey
 						response : responses) {
-					outputArea.append(String.format("\t\t%d:\t%d -> %1.3f\n",
-					                                response.getTimestamp(),
-					                                skillHistory.get(response).getOutcome(),
+					outputArea.append(String.format("    time %.4e:  %s -> %1.3f\n",
+					                                (double) response.getTimestamp(),
+					                                OUTCOME[skillHistory.get(response).getOutcome()],
 					                                skillHistory.getSkillLevel(response)
 					));
 				}
+
+				outputArea.append("\n");
 			}
+
+			outputArea.setCaretPosition(0);
 		}
 	}
 }

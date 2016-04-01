@@ -158,7 +158,7 @@ class StudentDataManager
 //		}
 //	}
 
-	void refresh() {
+	void fetchStudentsAndQuestions() {
 		studentIDs = null;
 		questionIDs = null;
 		questionSkills = null;
@@ -170,6 +170,40 @@ class StudentDataManager
 		catch (ClassNotFoundException cnfe) {
 			cnfe.printStackTrace();
 		}
+	}
+
+	StudentHistory getHistory(String student) {
+		if (get(student) != null) {
+			return get(student);
+		}
+
+		StudentHistory history = new StudentHistory();
+		put(student, history);
+
+		try {
+			Class.forName("org.sqlite.JDBC");
+			Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
+
+			Statement stat = connection.createStatement();
+			ResultSet rs = stat.executeQuery(
+					"SELECT DISTINCT timestamp, questionID, isCorrect FROM outcomes WHERE studentID='" +
+					student + "';");
+
+			while (rs.next()) {
+				Long timestamp = rs.getLong("timestamp");
+				String questionID = rs.getString("questionID");
+				boolean isCorrect = rs.getBoolean("isCorrect");
+
+				history.put(timestamp, questionID, new HashSet<>(questionSkills.get(questionID)), isCorrect);
+			}
+		}
+		catch (ClassNotFoundException | SQLException e) {
+			e.printStackTrace();
+		}
+
+		history.buildWeights();
+
+		return history;
 	}
 
 	void initHistory() {
