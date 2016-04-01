@@ -80,24 +80,45 @@ public class Diagnostics extends JFrame implements ActionListener
 			return;
 		}
 
-		// ==========================
+		// **************************
 		// Setting up the main window
-		// ==========================
+		// **************************
 		this.setTitle(resources.getString("MainWindowTitle"));
 		this.getContentPane().setLayout(new BorderLayout());
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-
 		// The main area of the layout
 		JPanel mainPanel = new JPanel(new BorderLayout());
-		this.add(mainPanel, BorderLayout.CENTER);
-
 		mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
-
 		// A cheerful image on the main window :)
-		JLabel iconLabel = new JLabel();
-		mainPanel.add(iconLabel, BorderLayout.WEST);
+//		this.addCheerfulIcon(mainPanel);
+		// The "command line interface"
+		this.addClipsPanel(mainPanel);
+		// The input file selection area
+//		this.addFileSelectionPanel();
+		// The facts filter area
+//		this.addFilterPanel();
 
+		this.add(mainPanel, BorderLayout.CENTER);
+		// Aligning the layout properly
+		this.pack();
+		this.setLocation(300, 200);
+		// Showing the main window
+		this.setVisible(true);
+
+		clips = new Environment();
+		outputArea.append(Environment.getVersion() + "\n" + resources.getString("CLIPSPrompt"));
+		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/defs.clp");
+		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/rules.clp");
+
+//		TODO: all the action is here
+//		dataManager.loadCSV(new File(System.getProperty("user.home") + "\\Desktop\\sample outcomes.csv"));
+		dataManager.refresh();
+		dataManager.initHistory();
+	}
+
+	private void addCheerfulIcon(JPanel mainPanel) {
+		JLabel iconLabel = new JLabel();
 		iconLabel.setIcon(
 				new ImageIcon(
 						getClass().getClassLoader()
@@ -105,66 +126,41 @@ public class Diagnostics extends JFrame implements ActionListener
 				)
 		);
 
+		mainPanel.add(iconLabel, BorderLayout.WEST);
+	}
 
-		// ****************************
-		// The "command line interface"
-		// ****************************
-		JPanel clipsPanel = new JPanel(new BorderLayout());
-		mainPanel.add(clipsPanel, BorderLayout.CENTER);
+	private void addFilterPanel() {
+		JPanel filterPanel = new JPanel(new BorderLayout());
+		addBorder(filterPanel, "MainWindowFilterPrompt");
 
-		// The log text area
-		outputArea = new JTextArea();
-		JScrollPane outputScrollPane = new JScrollPane(outputArea);
-		clipsPanel.add(outputScrollPane, BorderLayout.CENTER);
+		// Filter definition text field
+		factFilterTF = new JTextField("");
+		factFilterTF.addActionListener(this);
+		filterPanel.add(factFilterTF, BorderLayout.CENTER);
 
-		outputArea.setFont(Font.decode("Consolas-Plain-12"));
-		outputArea.setColumns(80);
-		outputArea.setEditable(false);
-		outputArea.setLineWrap(true);
-		outputArea.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
-		outputArea.setAutoscrolls(true);
+		// Filter run button
+		JButton showFacts = new JButton("Show Facts");
+		showFacts.setActionCommand("ShowFacts");
+		showFacts.addActionListener(this);
+		filterPanel.add(showFacts, BorderLayout.EAST);
 
-		// The input line
-		JPanel promptPanel = new JPanel(new BorderLayout());
-		clipsPanel.add(promptPanel, BorderLayout.SOUTH);
+		this.add(filterPanel, BorderLayout.SOUTH);
+	}
 
-		promptPanel.setBorder(BorderFactory.createTitledBorder(
-				BorderFactory.createEtchedBorder(),
-				resources.getString("MainWindowCLIPSPrompt")
-		));
-
-		clipsCommandTF = new JTextField("");
-		promptPanel.add(clipsCommandTF, BorderLayout.CENTER);
-
-		clipsCommandTF.setPreferredSize(new Dimension(outputArea.getWidth(), 24));
-		clipsCommandTF.setFont(Font.decode("Consolas-Plain-12"));
-		clipsCommandTF.addActionListener(this);
-
-
-		// *****************************
-		// The input file selection area
-		//******************************
+	private void addFileSelectionPanel() {
 		JPanel fileSelectionPanel = new JPanel(new BorderLayout());
-		this.add(fileSelectionPanel, BorderLayout.NORTH);
-
-		fileSelectionPanel.setBorder(BorderFactory.createTitledBorder(
-				BorderFactory.createEtchedBorder(),
-				resources.getString("MainWindowInputFilePrompt")
-		));
+		addBorder(fileSelectionPanel, "MainWindowInputFilePrompt");
 
 		// File path text field
 		filePathTF = new JTextField("");
-		fileSelectionPanel.add(filePathTF, BorderLayout.CENTER);
-
-		filePathTF.setPreferredSize(new Dimension(mainPanel.getWidth(), 24));
 		filePathTF.addActionListener(this);
+		fileSelectionPanel.add(filePathTF, BorderLayout.CENTER);
 
 		// File chooser button, opens the file chooser
 		JButton browseButton = new JButton("Browse");
-		fileSelectionPanel.add(browseButton, BorderLayout.EAST);
-
 		browseButton.setActionCommand("BrowseCLP");
 		browseButton.addActionListener(this);
+		fileSelectionPanel.add(browseButton, BorderLayout.EAST);
 
 		// The file filter used for browsing the system for input file
 		FileNameExtensionFilter fnef = new FileNameExtensionFilter(
@@ -173,50 +169,44 @@ public class Diagnostics extends JFrame implements ActionListener
 		);
 		fileChooser.setFileFilter(fnef);
 
+		this.add(fileSelectionPanel, BorderLayout.NORTH);
+	}
 
-		// ********************* //
-		// The facts filter area //
-		// ********************* //
-		JPanel filterPanel = new JPanel(new BorderLayout());
-		this.add(filterPanel, BorderLayout.SOUTH);
+	private void addClipsPanel(JPanel mainPanel) {
+		JPanel clipsPanel = new JPanel(new BorderLayout());
 
-		filterPanel.setBorder(BorderFactory.createTitledBorder(
+		// The log text area
+		outputArea = new JTextArea();
+		outputArea.setFont(Font.decode("Consolas-Plain-12"));
+		outputArea.setColumns(80);
+		outputArea.setRows(25);
+		outputArea.setEditable(false);
+		outputArea.setLineWrap(true);
+		outputArea.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
+		outputArea.setAutoscrolls(true);
+		JScrollPane outputScrollPane = new JScrollPane(outputArea);
+		clipsPanel.add(outputScrollPane, BorderLayout.CENTER);
+
+		// The input line
+		JPanel promptPanel = new JPanel(new BorderLayout());
+		addBorder(promptPanel, "MainWindowCLIPSPrompt");
+
+		clipsCommandTF = new JTextField("");
+		clipsCommandTF.setPreferredSize(new Dimension(outputArea.getWidth(), 24));
+		clipsCommandTF.setFont(Font.decode("Consolas-Plain-12"));
+		clipsCommandTF.addActionListener(this);
+		promptPanel.add(clipsCommandTF, BorderLayout.CENTER);
+
+		clipsPanel.add(promptPanel, BorderLayout.SOUTH);
+
+		mainPanel.add(clipsPanel, BorderLayout.CENTER);
+	}
+
+	private void addBorder(JPanel panel, String resourceID) {
+		panel.setBorder(BorderFactory.createTitledBorder(
 				BorderFactory.createEtchedBorder(),
-				resources.getString("MainWindowFilterPrompt")
+				resources.getString(resourceID)
 		));
-
-		// Filter definition text field
-		factFilterTF = new JTextField("");
-		filterPanel.add(factFilterTF, BorderLayout.CENTER);
-
-		factFilterTF.setPreferredSize(new Dimension(mainPanel.getWidth(), 24));
-		factFilterTF.addActionListener(this);
-
-		// Filter run button
-		JButton showFacts = new JButton("Show Facts");
-		filterPanel.add(showFacts, BorderLayout.EAST);
-
-		showFacts.setActionCommand("ShowFacts");
-		showFacts.addActionListener(this);
-
-
-		// Aligning the layout properly
-		this.pack();
-		this.setLocation(300, 200);
-
-		// Showing the main window
-		this.setVisible(true);
-
-
-		clips = new Environment();
-		outputArea.append(Environment.getVersion() + "\n" + resources.getString("CLIPSPrompt"));
-		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/defs.clp");
-		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/rules.clp");
-
-//		TODO: all the action is here
-		dataManager.loadCSV(new File(System.getProperty("user.home") + "\\Desktop\\sample outcomes.csv"));
-		dataManager.refresh();
-		dataManager.initHistory();
 	}
 
 
