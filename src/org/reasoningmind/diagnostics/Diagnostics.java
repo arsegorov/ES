@@ -63,7 +63,11 @@ public class Diagnostics extends JFrame implements ActionListener
 		}
 
 //		TODO: loading the CSV
-//		dataManager.loadCSV(new File(System.getProperty("user.home") + "\\Desktop\\sample outcomes.csv"));
+		dataManager.loadCSV(new File(System.getProperty("user.home")
+		                             + (Locale.getDefault().equals(new Locale("ru", "RU"))
+		                                ?"\\Рабочий стол"
+		                                :"\\Desktop")
+		                             + "\\sample outcomes.csv"));
 		dataManager.fetchStudentsAndQuestions();
 
 		// **************************
@@ -139,7 +143,7 @@ public class Diagnostics extends JFrame implements ActionListener
 				)
 		);
 
-		parent.add(iconLabel, BorderLayout.WEST);
+		parent.add(iconLabel, BorderLayout.SOUTH);
 	}
 
 	// Parts of user interface
@@ -225,7 +229,7 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	private JComboBox<String> studentSelector;
 	private JComboBox<String> skillSelector;
-	private JCheckBox showDetails;
+	private JCheckBox showDetailsCheckbox;
 
 	private void addStudentSelectionPanel() {
 		JPanel studentSelectionPanel = new JPanel(new BorderLayout());
@@ -242,15 +246,15 @@ public class Diagnostics extends JFrame implements ActionListener
 		skillSelector = new JComboBox<>();
 		skillSelector.addActionListener(this);
 		skillSelector.setEditable(false);
-		skillSelector.setModel(new DefaultComboBoxModel<>(new String[] {""}));
+		skillSelector.setModel(new DefaultComboBoxModel<>(new String[]{""}));
 		selectorsPanel.add(skillSelector);
 
-		showDetails = new JCheckBox("Show details", false);
-		showDetails.addActionListener(this);
-		selectorsPanel.add(showDetails);
+		showDetailsCheckbox = new JCheckBox("Show details", false);
+		showDetailsCheckbox.addActionListener(this);
+		selectorsPanel.add(showDetailsCheckbox);
 
 		studentSelectionPanel.add(selectorsPanel, BorderLayout.NORTH);
-//		addCheerfulIcon(studentSelectionPanel);
+		addCheerfulIcon(studentSelectionPanel);
 
 		this.add(studentSelectionPanel, BorderLayout.WEST);
 	}
@@ -318,7 +322,7 @@ public class Diagnostics extends JFrame implements ActionListener
 
 
 	// Concurrency-related fields
-	private boolean isExecuting = false;
+	private boolean clipsIsRunning = false;
 //	private Thread executionThread;
 
 //	/**
@@ -331,7 +335,7 @@ public class Diagnostics extends JFrame implements ActionListener
 //
 //					SwingUtilities.invokeLater(
 //							() -> {
-//								isExecuting = false;
+//								clipsIsRunning = false;
 //
 //								filePathTF.setEnabled(true);
 //								clipsCommandTF.setEnabled(true);
@@ -341,7 +345,7 @@ public class Diagnostics extends JFrame implements ActionListener
 //					);
 //				};
 //
-//		isExecuting = true;
+//		clipsIsRunning = true;
 //		filePathTF.setEnabled(false);
 //		clipsCommandTF.setEnabled(false);
 //		filePathTF.setEnabled(false);
@@ -362,118 +366,139 @@ public class Diagnostics extends JFrame implements ActionListener
 	 */
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (isExecuting) {
+		if (clipsIsRunning) {
 			return;
 		}
 
 		if (e.getActionCommand().equals("BrowseCLP")) {
-			int returnVal = fileChooser.showOpenDialog(this);
-
-			if (returnVal == JFileChooser.APPROVE_OPTION) {
-				File file = fileChooser.getSelectedFile();
-				filePathTF.setText(file.getPath());
-
-				eval("(load \"" + file.getPath() + "\")");
-				clips.reset();
-			}
+			browseAndLoadCLP();
 		}
 		else if (e.getSource() == filePathTF) {
-			File file = new File(filePathTF.getText());
-
-			if (file.exists()) {
-				eval("(load \"" + filePathTF.getText() + "\")");
-				clips.reset();
-			}
-			else {
-				JOptionPane.showMessageDialog(this,
-				                              "Specified file doesn't exist.",
-				                              "Error",
-				                              JOptionPane.ERROR_MESSAGE);
-			}
+			loadCLPFromPath();
 		}
-		else if (e.getActionCommand().equals("ShowFacts") || e.getSource() == factFilterTF) {
-			MultifieldValue mv = (MultifieldValue) clips.eval("(find-fact " + factFilterTF.getText() + ")");
-			if (mv.size() == 0) {
-				JOptionPane.showMessageDialog(this,
-				                              "There are no facts that match the query:\n" + factFilterTF.getText(),
-				                              "Facts not found",
-				                              JOptionPane.INFORMATION_MESSAGE);
-				return;
-			}
-
-			new FactsFrame(this, factFilterTF.getText());
+		else if (e.getActionCommand().equals("ShowFacts")
+		         || e.getSource() == factFilterTF) {
+			showFacts();
 		}
 		else if (e.getSource() == clipsCommandTF) {
-			if (studentStats) {
-				outputArea.append("\n" + resources.getString("CLIPSPrompt"));
-				studentStats = false;
-			}
-
-			eval(clipsCommandTF.getText());
-			outputArea.setCaretPosition(outputArea.getText().length());
-			clipsCommandTF.setText("");
-			clips.printBanner();
+			executeClipsCommand();
 		}
-		else if (e.getSource() == studentSelector || e.getSource() == showDetails || e.getSource() == skillSelector) {
-			String studentID = (String) studentSelector.getSelectedItem();
-			if (studentID.equals("")) {
-				return;
-			}
-			String selectedSkill = (String) skillSelector.getSelectedItem();
+		else if (e.getSource() == studentSelector
+		         || e.getSource() == skillSelector
+		         || e.getSource() == showDetailsCheckbox) {
+			displayStudentData(e);
+		}
+	}
 
-			studentStats = true;
+	private void displayStudentData(ActionEvent e) {
+		String studentID = (String) studentSelector.getSelectedItem();
+		if (studentID.equals("")) {
+			return;
+		}
+		String selectedSkill = (String) skillSelector.getSelectedItem();
 
-			outputArea.setText("");
-			outputArea.append(studentID + "\n");
+		studentStats = true;
 
-			StudentHistory history = dataManager.getHistory(studentID);
+		outputArea.setText("");
+		outputArea.append(studentID + "\n");
 
-			Set<String> skills;
-			if (selectedSkill.equals("")){
-				skills = history.keySet();
-			}
-			else {
-				skills = new HashSet<>();
-				skills.add(selectedSkill);
-			}
+		StudentHistory history = dataManager.getHistory(studentID);
 
-			if (e.getSource() == studentSelector) {
-				skillSelector.setModel(new DefaultComboBoxModel<>(new Vector<String>(new ConcurrentSkipListSet<>(skills))));
-				skillSelector.insertItemAt("", 0);
-				skillSelector.setSelectedIndex(0);
-			}
+		Set<String> skills;
+		if (selectedSkill.equals("")) {
+			skills = history.keySet();
+		}
+		else {
+			skills = new HashSet<>();
+			skills.add(selectedSkill);
+		}
 
-			for (String skill : skills) {
-				StudentHistory.SkillHistory skillHistory = history.get(skill);
-				outputArea.append(String.format("  %s:\n",
-				                                skill
+		if (e.getSource() == studentSelector) {
+			skillSelector.setModel(new DefaultComboBoxModel<>(new Vector<String>(new ConcurrentSkipListSet<>(skills))));
+			skillSelector.insertItemAt("", 0);
+			skillSelector.setSelectedIndex(0);
+		}
+
+		for (String skill : skills) {
+			StudentHistory.SkillHistory skillHistory = history.get(skill);
+			outputArea.append(String.format("  %s:\n",
+			                                skill
+			));
+
+			Set<StudentHistory.RecordKey> responses = skillHistory.descendingKeySet();
+
+			final String[] OUTCOME = {"F    ", "pass ", "F*   "};
+			boolean showDetails = this.showDetailsCheckbox.isSelected();
+
+			for (StudentHistory.RecordKey
+					response : responses) {
+
+				outputArea.append(String.format(
+						(showDetails ?"     " + response.questionID + "\n" :"") + "          %s -> %1.3f    %s\n",
+						OUTCOME[skillHistory.get(response).getOutcome()],
+						skillHistory.getSkillLevel(response),
+						showDetails ?skillHistory.get(response).printOtherSkills() :""
 				));
-
-				Set<StudentHistory.RecordKey> responses = skillHistory.descendingKeySet();
-
-				final String[] OUTCOME = {"F    ", "pass ", "F*   "};
-				boolean showDetails = this.showDetails.isSelected();
-
-				for (StudentHistory.RecordKey
-						response : responses) {
-
-					outputArea.append(String.format(
-							(showDetails ?"     " + response.questionID + "\n" :"") + "          %s -> %1.3f    %s\n",
-//					                                (double) response.getTimestamp(),
-							OUTCOME[skillHistory.get(response).getOutcome()],
-							skillHistory.getSkillLevel(response),
-							showDetails ?skillHistory.get(response).printOtherSkills() :""
-					));
-				}
-				outputArea.append(String.format("                      TREND=%1.3f\n" + (showDetails ?"\n\n" :""),
-//				                                skill,
-                                                skillHistory.trend()
-				));
-
-				outputArea.append("\n");
 			}
+			outputArea.append(String.format("                      TREND=%1.3f\n" + (showDetails ?"\n\n" :""),
+			                                skillHistory.trend()
+			));
 
-			outputArea.setCaretPosition(0);
+			outputArea.append("\n");
+		}
+
+		outputArea.setCaretPosition(0);
+	}
+
+	private void executeClipsCommand() {
+		if (studentStats) {
+			outputArea.append("\n" + resources.getString("CLIPSPrompt"));
+			studentStats = false;
+		}
+
+		eval(clipsCommandTF.getText());
+		outputArea.setCaretPosition(outputArea.getText().length());
+		clipsCommandTF.setText("");
+		clips.printBanner();
+	}
+
+	private void showFacts() {
+		MultifieldValue mv = (MultifieldValue) clips.eval("(find-fact " + factFilterTF.getText() + ")");
+		if (mv.size() == 0) {
+			JOptionPane.showMessageDialog(this,
+			                              "There are no facts that match the query:\n" + factFilterTF.getText(),
+			                              "Facts not found",
+			                              JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+
+		new FactsFrame(this, factFilterTF.getText());
+	}
+
+	private void loadCLPFromPath() {
+		File file = new File(filePathTF.getText());
+
+		if (file.exists()) {
+			eval("(load \"" + filePathTF.getText() + "\")");
+			clips.reset();
+		}
+		else {
+			JOptionPane.showMessageDialog(this,
+			                              "Specified file doesn't exist.",
+			                              "Error",
+			                              JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private void browseAndLoadCLP() {
+		int returnVal = fileChooser.showOpenDialog(this);
+
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			File file = fileChooser.getSelectedFile();
+			filePathTF.setText(file.getPath());
+
+			eval("(load \"" + file.getPath() + "\")");
+			clips.reset();
 		}
 	}
 }
