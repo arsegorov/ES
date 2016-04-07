@@ -47,7 +47,6 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	private final StudentDataManager dataManager = new StudentDataManager();
 
-
 	// ============
 	// Constructors
 	// ============
@@ -61,14 +60,6 @@ public class Diagnostics extends JFrame implements ActionListener
 		if (!loadResources()) {
 			return;
 		}
-
-//		TODO: loading the CSV
-		dataManager.loadCSV(new File(System.getProperty("user.home")
-		                             + (Locale.getDefault().equals(new Locale("ru", "RU"))
-		                                ?"\\Рабочий стол"
-		                                :"\\Desktop")
-		                             + "\\sample outcomes.csv"));
-		dataManager.fetchStudentsAndQuestions();
 
 		// **************************
 		// Setting up the main window
@@ -86,22 +77,21 @@ public class Diagnostics extends JFrame implements ActionListener
 		this.addClipsPanel(mainPanel);
 
 		// The input file selection area
-//		this.addFileSelectionPanel();
+		this.addFileSelectionPanel();
 
 		// The facts filter area
 //		this.addFilterPanel();
 
 		this.addStudentSelectionPanel();
-		studentSelector.setModel(new DefaultComboBoxModel<>(dataManager.getStudentIDs()));
-		studentSelector.insertItemAt("", 0);
-		studentSelector.setSelectedIndex(0);
-
+		studentSelector.setModel(new DefaultComboBoxModel<>(new String[]{""}));
 
 		// Aligning the layout properly
 		this.pack();
 		this.setLocation(300, 200);
 		// Showing the main window
 		this.setVisible(true);
+
+		resetData();
 
 		clips = new Environment();
 
@@ -110,6 +100,15 @@ public class Diagnostics extends JFrame implements ActionListener
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/rules.clp");
 
 		outputArea.append(Environment.getVersion() + "\n" + resources.getString("CLIPSPrompt"));
+	}
+
+	private void resetData() {
+		dataManager.fetchStudentsAndQuestions(this);
+
+		studentSelector.setModel(new DefaultComboBoxModel<>(dataManager.getStudentIDs()));
+		studentSelector.insertItemAt("", 0);
+		studentSelector.setSelectedIndex(0);
+		skillSelector.setModel(new DefaultComboBoxModel<>(new String[]{""}));
 	}
 
 	private boolean loadResources() {
@@ -180,16 +179,9 @@ public class Diagnostics extends JFrame implements ActionListener
 
 		// File chooser button, opens the file chooser
 		JButton browseButton = new JButton("Browse");
-		browseButton.setActionCommand("BrowseCLP");
+		browseButton.setActionCommand("BrowseCSV");
 		browseButton.addActionListener(this);
 		fileSelectionPanel.add(browseButton, BorderLayout.EAST);
-
-		// The file filter used for browsing the system for input file
-		FileNameExtensionFilter fnef = new FileNameExtensionFilter(
-				resources.getString("CLIPSFileDescription"),
-				resources.getString("CLIPSFileExt")
-		);
-		fileChooser.setFileFilter(fnef);
 
 		this.add(fileSelectionPanel, BorderLayout.NORTH);
 	}
@@ -371,10 +363,30 @@ public class Diagnostics extends JFrame implements ActionListener
 		}
 
 		if (e.getActionCommand().equals("BrowseCLP")) {
-			browseAndLoadCLP();
+
+			if (browseAndLoad(resources.getString("CLIPSFileDescription"),
+			                  resources.getString("CLIPSFileExt"))
+			    == JFileChooser.APPROVE_OPTION) {
+
+				File file = fileChooser.getSelectedFile();
+				filePathTF.setText(file.getPath());
+
+				eval("(load \"" + file.getPath() + "\")");
+				clips.reset();
+			}
 		}
-		else if (e.getSource() == filePathTF) {
-			loadCLPFromPath();
+		else if (e.getActionCommand().equals("BrowseCSV")) {
+
+			if (browseAndLoad(resources.getString("CSVFileDescription"),
+			                  resources.getString("CSVFileExt"))
+			    == JFileChooser.APPROVE_OPTION) {
+
+				File file = fileChooser.getSelectedFile();
+				filePathTF.setText(file.getPath());
+
+				dataManager.loadCSV(file);
+				resetData();
+			}
 		}
 		else if (e.getActionCommand().equals("ShowFacts")
 		         || e.getSource() == factFilterTF) {
@@ -405,7 +417,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		StudentHistory history = dataManager.getHistory(studentID);
 
 		Set<String> skills;
-		if (selectedSkill.equals("")) {
+		if (selectedSkill.equals("") || e.getSource() == studentSelector) {
 			skills = history.keySet();
 		}
 		else {
@@ -422,7 +434,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		for (String skill : skills) {
 			StudentHistory.SkillHistory skillHistory = history.get(skill);
 			outputArea.append(String.format("  %s:\n",
-			                                skill
+			                                skill.toUpperCase()
 			));
 
 			Set<StudentHistory.RecordKey> responses = skillHistory.descendingKeySet();
@@ -434,7 +446,7 @@ public class Diagnostics extends JFrame implements ActionListener
 					response : responses) {
 
 				outputArea.append(String.format(
-						(showDetails ?"     " + response.questionID + "\n" :"") + "          %s -> %1.3f    %s\n",
+						(showDetails ?"          " + response.questionID + "\n" :"") + "          %s -> %1.3f    %s\n",
 						OUTCOME[skillHistory.get(response).getOutcome()],
 						skillHistory.getSkillLevel(response),
 						showDetails ?skillHistory.get(response).printOtherSkills() :""
@@ -490,15 +502,11 @@ public class Diagnostics extends JFrame implements ActionListener
 		}
 	}
 
-	private void browseAndLoadCLP() {
-		int returnVal = fileChooser.showOpenDialog(this);
+	private int browseAndLoad(String fileDescription, String fileExt) {
+		// The file filter used for browsing the system for input file
+		FileNameExtensionFilter fnef = new FileNameExtensionFilter(fileDescription, fileExt);
+		fileChooser.setFileFilter(fnef);
 
-		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			File file = fileChooser.getSelectedFile();
-			filePathTF.setText(file.getPath());
-
-			eval("(load \"" + file.getPath() + "\")");
-			clips.reset();
-		}
+		return fileChooser.showOpenDialog(this);
 	}
 }
