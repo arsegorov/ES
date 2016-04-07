@@ -13,10 +13,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * This is the main class of the diagnostics application.
@@ -30,6 +28,7 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	// Application text resources
 	private ResourceBundle resources;
+
 	ResourceBundle getResources() {
 		return resources;
 	}
@@ -41,6 +40,7 @@ public class Diagnostics extends JFrame implements ActionListener
 	 * In IntelliJ Idea, the option is specified under VM Options in "Run/Debug Configurations"
 	 */
 	private Environment clips;
+
 	Environment getClips() {
 		return clips;
 	}
@@ -62,7 +62,7 @@ public class Diagnostics extends JFrame implements ActionListener
 			return;
 		}
 
-//		TODO: all the action is here
+//		TODO: loading the CSV
 //		dataManager.loadCSV(new File(System.getProperty("user.home") + "\\Desktop\\sample outcomes.csv"));
 		dataManager.fetchStudentsAndQuestions();
 
@@ -144,6 +144,7 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	// Parts of user interface
 	private JTextField factFilterTF;
+
 	private void addFilterPanel() {
 		JPanel filterPanel = new JPanel(new BorderLayout());
 		addBorder(filterPanel, "MainWindowFilterPrompt");
@@ -163,6 +164,7 @@ public class Diagnostics extends JFrame implements ActionListener
 	}
 
 	private JTextField filePathTF;
+
 	private void addFileSelectionPanel() {
 		JPanel fileSelectionPanel = new JPanel(new BorderLayout());
 		addBorder(fileSelectionPanel, "MainWindowInputFilePrompt");
@@ -190,6 +192,7 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	private JTextField clipsCommandTF;
 	private JTextArea outputArea;
+
 	private void addClipsPanel(JPanel parent) {
 		JPanel clipsPanel = new JPanel(new BorderLayout());
 
@@ -221,16 +224,33 @@ public class Diagnostics extends JFrame implements ActionListener
 	}
 
 	private JComboBox<String> studentSelector;
+	private JComboBox<String> skillSelector;
+	private JCheckBox showDetails;
+
 	private void addStudentSelectionPanel() {
 		JPanel studentSelectionPanel = new JPanel(new BorderLayout());
 		addBorder(studentSelectionPanel, "MainWindowStudentSelectorPrompt");
+
+		JPanel selectorsPanel = new JPanel(new GridLayout(3, 1));
 
 		studentSelector = new JComboBox<>();
 		studentSelector.addActionListener(this);
 		studentSelector.setEditable(false);
 		studentSelector.setPreferredSize(new Dimension(200, 24));
-		studentSelectionPanel.add(studentSelector, BorderLayout.NORTH);
-		addCheerfulIcon(studentSelectionPanel);
+		selectorsPanel.add(studentSelector);
+
+		skillSelector = new JComboBox<>();
+		skillSelector.addActionListener(this);
+		skillSelector.setEditable(false);
+		skillSelector.setModel(new DefaultComboBoxModel<>(new String[] {""}));
+		selectorsPanel.add(skillSelector);
+
+		showDetails = new JCheckBox("Show details", false);
+		showDetails.addActionListener(this);
+		selectorsPanel.add(showDetails);
+
+		studentSelectionPanel.add(selectorsPanel, BorderLayout.NORTH);
+//		addCheerfulIcon(studentSelectionPanel);
 
 		this.add(studentSelectionPanel, BorderLayout.WEST);
 	}
@@ -384,7 +404,7 @@ public class Diagnostics extends JFrame implements ActionListener
 			new FactsFrame(this, factFilterTF.getText());
 		}
 		else if (e.getSource() == clipsCommandTF) {
-			if(studentStats) {
+			if (studentStats) {
 				outputArea.append("\n" + resources.getString("CLIPSPrompt"));
 				studentStats = false;
 			}
@@ -394,12 +414,13 @@ public class Diagnostics extends JFrame implements ActionListener
 			clipsCommandTF.setText("");
 			clips.printBanner();
 		}
-		else if (e.getSource() == studentSelector) {
+		else if (e.getSource() == studentSelector || e.getSource() == showDetails || e.getSource() == skillSelector) {
 			String studentID = (String) studentSelector.getSelectedItem();
-			if (studentID.equals(""))
-			{
+			if (studentID.equals("")) {
 				return;
 			}
+			String selectedSkill = (String) skillSelector.getSelectedItem();
+
 			studentStats = true;
 
 			outputArea.setText("");
@@ -407,27 +428,47 @@ public class Diagnostics extends JFrame implements ActionListener
 
 			StudentHistory history = dataManager.getHistory(studentID);
 
-			Set<String> skills = history.keySet();
+			Set<String> skills;
+			if (selectedSkill.equals("")){
+				skills = history.keySet();
+			}
+			else {
+				skills = new HashSet<>();
+				skills.add(selectedSkill);
+			}
+
+			if (e.getSource() == studentSelector) {
+				skillSelector.setModel(new DefaultComboBoxModel<>(new Vector<String>(new ConcurrentSkipListSet<>(skills))));
+				skillSelector.insertItemAt("", 0);
+				skillSelector.setSelectedIndex(0);
+			}
 
 			for (String skill : skills) {
 				StudentHistory.SkillHistory skillHistory = history.get(skill);
-				outputArea.append(String.format("  %s:\n                      TREND=%1.3f\n",
-				                                skill,
-				                                skillHistory.trend()
+				outputArea.append(String.format("  %s:\n",
+				                                skill
 				));
 
-				Set<StudentHistory.RecordKey> responses = skillHistory.keySet();
+				Set<StudentHistory.RecordKey> responses = skillHistory.descendingKeySet();
 
-				final String[] OUTCOME = {"fail ", "pass ", "fail*"};
+				final String[] OUTCOME = {"F    ", "pass ", "F*   "};
+				boolean showDetails = this.showDetails.isSelected();
 
 				for (StudentHistory.RecordKey
 						response : responses) {
-					outputArea.append(String.format("    time %.4e:  %s -> %1.3f\n",
-					                                (double) response.getTimestamp(),
-					                                OUTCOME[skillHistory.get(response).getOutcome()],
-					                                skillHistory.getSkillLevel(response)
+
+					outputArea.append(String.format(
+							(showDetails ?"     " + response.questionID + "\n" :"") + "          %s -> %1.3f    %s\n",
+//					                                (double) response.getTimestamp(),
+							OUTCOME[skillHistory.get(response).getOutcome()],
+							skillHistory.getSkillLevel(response),
+							showDetails ?skillHistory.get(response).printOtherSkills() :""
 					));
 				}
+				outputArea.append(String.format("                      TREND=%1.3f\n" + (showDetails ?"\n\n" :""),
+//				                                skill,
+                                                skillHistory.trend()
+				));
 
 				outputArea.append("\n");
 			}

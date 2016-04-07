@@ -2,10 +2,7 @@ package org.reasoningmind.diagnostics;
 
 import org.ejml.simple.SimpleMatrix;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
@@ -21,7 +18,7 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 	/// Methods
 	///
 
-	private void put(RecordKey key, String skill, int outcome) {
+	private void put(RecordKey key, String skill, int outcome, Set<String> otherSkills) {
 		if (key == null || skill == null) {
 			return;
 		}
@@ -33,7 +30,7 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 			put(skill, history);
 		}
 
-		history.put(key, outcome);
+		history.put(key, outcome, otherSkills);
 	}
 
 	private void put(RecordKey key, Set<String> skills, boolean isCorrect) {
@@ -48,7 +45,10 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 		               :SkillHistory.FAIL_MULTIPLE_SKILLS;
 
 		for (String skill : skills) {
-			put(key, skill, outcome);
+			Set<String> otherSkills = new HashSet<>(skills);
+			otherSkills.remove(skill);
+
+			put(key, skill, outcome, otherSkills);
 		}
 	}
 
@@ -153,9 +153,19 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 	{
 		private int outcome;
 		private double level = 0.5;
+		private Set<String> otherSkills = new HashSet<>();
 
-		Record(int outcome) {
+//		Set<String> getOtherSkills() {
+//			return otherSkills;
+//		}
+
+//		void setOtherSkills(Set<String> otherSkills) {
+//			this.otherSkills = otherSkills;
+//		}
+
+		Record(int outcome, Set<String> otherSkills) {
 			this.outcome = outcome;
+			this.otherSkills = otherSkills;
 		}
 
 		int getOutcome() {
@@ -168,6 +178,21 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 
 		void setLevel(double level) {
 			this.level = level;
+		}
+
+		String printOtherSkills () {
+			if (otherSkills.size() == 0)
+			{
+				return "\n";
+			}
+
+			String res = "";
+
+			for(String skill : otherSkills) {
+				res += skill + "\n                            ";
+			}
+
+			return res;
 		}
 	}
 
@@ -238,7 +263,7 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 		 * 		<li/>{@link #FAIL_MULTIPLE_SKILLS} &mdash; a multiple-skill failure
 		 * 		</ul>
 		 */
-		void put(RecordKey key, int outcome) {
+		void put(RecordKey key, int outcome, Set<String> otherSkills) {
 			if (key == null) {
 				return;
 			}
@@ -248,7 +273,7 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 				return;
 			}
 
-			put(key, new Record(outcome));
+			put(key, new Record(outcome, otherSkills));
 		}
 
 		/**

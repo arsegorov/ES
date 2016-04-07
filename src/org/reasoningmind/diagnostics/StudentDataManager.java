@@ -43,7 +43,7 @@ class StudentDataManager
 				prep.setLong(2, Long.parseLong(record.get("timestamp")));
 				prep.setString(3,
 				               record.get("lesson") + "/" + record.get("problem") + ": " + record.get("question") +
-				               "\t#" + record.get("attempt"));
+				               "  #" + record.get("attempt"));
 				prep.setBoolean(4, record.get("isCorrect").equals("correct"));
 				prep.setString(5, record.get("skill"));
 				prep.addBatch();
