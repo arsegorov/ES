@@ -446,7 +446,7 @@ public class Diagnostics extends JFrame implements ActionListener
 					response : responses) {
 
 				outputArea.append(String.format(
-						(showDetails ?"          " + response.questionID + "\n" :"") + "          %s -> %1.3f    %s\n",
+						(showDetails ?"          " + response.getQuestionID() + "\n" :"") + "          %s -> %1.3f    %s\n",
 						OUTCOME[skillHistory.get(response).getOutcome()],
 						skillHistory.getSkillLevel(response),
 						showDetails ?skillHistory.get(response).printOtherSkills() :""

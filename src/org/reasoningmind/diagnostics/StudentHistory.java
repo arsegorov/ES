@@ -81,8 +81,8 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 	 */
 	class RecordKey implements Comparable<RecordKey>
 	{
-		long timestamp;
-		String questionID = "none";
+		private long timestamp;
+		private String questionID = "none";
 
 		RecordKey(long timestamp, String questionID) {
 			this.timestamp = timestamp;
@@ -91,8 +91,12 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 			}
 		}
 
-		long getTimestamp() {
-			return timestamp;
+//		long getTimestamp() {
+//			return timestamp;
+//		}
+
+		String getQuestionID() {
+			return questionID;
 		}
 
 		@Override
