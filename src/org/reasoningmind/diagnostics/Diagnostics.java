@@ -3,8 +3,8 @@
  */
 package org.reasoningmind.diagnostics;
 
-import net.sf.clipsrules.jni.Environment;
-import net.sf.clipsrules.jni.MultifieldValue;
+//import net.sf.clipsrules.jni.Environment;
+//import net.sf.clipsrules.jni.MultifieldValue;
 import net.sf.clipsrules.jni.PrimitiveValue;
 
 import javax.swing.*;
@@ -39,11 +39,11 @@ public class Diagnostics extends JFrame implements ActionListener
 	 * This is where the CLIPSJNI.dll is.
 	 * In IntelliJ Idea, the option is specified under VM Options in "Run/Debug Configurations"
 	 */
-	private Environment clips;
-
-	Environment getClips() {
-		return clips;
-	}
+//	private Environment clips;
+//
+//	Environment getClips() {
+//		return clips;
+//	}
 
 	private final StudentDataManager dataManager = new StudentDataManager();
 
@@ -93,13 +93,13 @@ public class Diagnostics extends JFrame implements ActionListener
 
 		resetData();
 
-		clips = new Environment();
-
-		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/defs.clp");
-		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/skills.clp");
-		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/rules.clp");
-
-		outputArea.append(Environment.getVersion() + "\n" + resources.getString("CLIPSPrompt"));
+//		clips = new Environment();
+//
+//		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/defs.clp");
+//		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/skills.clp");
+//		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/rules.clp");
+//
+//		outputArea.append(Environment.getVersion() + "\n" + resources.getString("CLIPSPrompt"));
 	}
 
 	private void resetData() {
@@ -283,34 +283,34 @@ public class Diagnostics extends JFrame implements ActionListener
 	 *
 	 * @see net.sf.clipsrules.jni.Environment#eval(String)
 	 */
-	private PrimitiveValue eval(String expression) {
-		// Escaping the back slashes in the expression before passing the string to the environment
-		// (each '\' should be changed to "\\"),
-		// then running CLIPS and getting the result
-		PrimitiveValue res = clips.eval(expression.replace("\\", "\\\\"));
-
-		// Checking if the result is a multi-filed value
-		if (res.getClass().getSimpleName().equals("MultifieldValue")) {
-			MultifieldValue mv = (MultifieldValue) res;
-
-			outputArea.append(expression + "\n\n");
-			for (int i = 0; i < mv.size(); i++) {
-				outputArea.append(mv.get(i).toString() + "\n");
-			}
-
-			outputArea.append(resources.getString("CLIPSPrompt"));
-		}
-		// ... or a void value
-		else if (res.getClass().getSimpleName().equals("VoidValue")) {
-			outputArea.append(expression + "\n\n/* Void Value */\n" + resources.getString("CLIPSPrompt"));
-		}
-		// ... or a single value
-		else {
-			outputArea.append(expression + "\n\n" + res.toString() + "\n" + resources.getString("CLIPSPrompt"));
-		}
-
-		return res;
-	}
+//	private PrimitiveValue eval(String expression) {
+//		// Escaping the back slashes in the expression before passing the string to the environment
+//		// (each '\' should be changed to "\\"),
+//		// then running CLIPS and getting the result
+//		PrimitiveValue res = clips.eval(expression.replace("\\", "\\\\"));
+//
+//		// Checking if the result is a multi-filed value
+//		if (res.getClass().getSimpleName().equals("MultifieldValue")) {
+//			MultifieldValue mv = (MultifieldValue) res;
+//
+//			outputArea.append(expression + "\n\n");
+//			for (int i = 0; i < mv.size(); i++) {
+//				outputArea.append(mv.get(i).toString() + "\n");
+//			}
+//
+//			outputArea.append(resources.getString("CLIPSPrompt"));
+//		}
+//		// ... or a void value
+//		else if (res.getClass().getSimpleName().equals("VoidValue")) {
+//			outputArea.append(expression + "\n\n/* Void Value */\n" + resources.getString("CLIPSPrompt"));
+//		}
+//		// ... or a single value
+//		else {
+//			outputArea.append(expression + "\n\n" + res.toString() + "\n" + resources.getString("CLIPSPrompt"));
+//		}
+//
+//		return res;
+//	}
 
 
 	// Concurrency-related fields
@@ -362,20 +362,21 @@ public class Diagnostics extends JFrame implements ActionListener
 			return;
 		}
 
-		if (e.getActionCommand().equals("BrowseCLP")) {
-
-			if (browseAndLoad(resources.getString("CLIPSFileDescription"),
-			                  resources.getString("CLIPSFileExt"))
-			    == JFileChooser.APPROVE_OPTION) {
-
-				File file = fileChooser.getSelectedFile();
-				filePathTF.setText(file.getPath());
-
-				eval("(load \"" + file.getPath() + "\")");
-				clips.reset();
-			}
-		}
-		else if (e.getActionCommand().equals("BrowseCSV")) {
+//		if (e.getActionCommand().equals("BrowseCLP")) {
+//
+//			if (browseAndLoad(resources.getString("CLIPSFileDescription"),
+//			                  resources.getString("CLIPSFileExt"))
+//			    == JFileChooser.APPROVE_OPTION) {
+//
+//				File file = fileChooser.getSelectedFile();
+//				filePathTF.setText(file.getPath());
+//
+//				eval("(load \"" + file.getPath() + "\")");
+//				clips.reset();
+//			}
+//		}
+//		else
+		if (e.getActionCommand().equals("BrowseCSV")) {
 
 			if (browseAndLoad(resources.getString("CSVFileDescription"),
 			                  resources.getString("CSVFileExt"))
@@ -388,13 +389,13 @@ public class Diagnostics extends JFrame implements ActionListener
 				resetData();
 			}
 		}
-		else if (e.getActionCommand().equals("ShowFacts")
-		         || e.getSource() == factFilterTF) {
-			showFacts();
-		}
-		else if (e.getSource() == clipsCommandTF) {
-			executeClipsCommand();
-		}
+//		else if (e.getActionCommand().equals("ShowFacts")
+//		         || e.getSource() == factFilterTF) {
+//			showFacts();
+//		}
+//		else if (e.getSource() == clipsCommandTF) {
+//			executeClipsCommand();
+//		}
 		else if (e.getSource() == studentSelector
 		         || e.getSource() == skillSelector
 		         || e.getSource() == showDetailsCheckbox) {
@@ -462,45 +463,43 @@ public class Diagnostics extends JFrame implements ActionListener
 		outputArea.setCaretPosition(0);
 	}
 
-	private void executeClipsCommand() {
-		if (studentStats) {
-			outputArea.append("\n" + resources.getString("CLIPSPrompt"));
-			studentStats = false;
-		}
+//	private void executeClipsCommand() {
+//		if (studentStats) {
+//			outputArea.append("\n" + resources.getString("CLIPSPrompt"));
+//			studentStats = false;
+//		}
+//
+//		eval(clipsCommandTF.getText());
+//		outputArea.setCaretPosition(outputArea.getText().length());
+//		clipsCommandTF.setText("");
+//		clips.printBanner();
+//	}
 
-		eval(clipsCommandTF.getText());
-		outputArea.setCaretPosition(outputArea.getText().length());
-		clipsCommandTF.setText("");
-		clips.printBanner();
-	}
+//	private void showFacts() {
+//		MultifieldValue mv = (MultifieldValue) clips.eval("(find-fact " + factFilterTF.getText() + ")");
+//		if (mv.size() == 0) {
+//			JOptionPane.showMessageDialog(this,
+//			                              "There are no facts that match the query:\n" + factFilterTF.getText(),
+//			                              "Facts not found",
+//			                              JOptionPane.INFORMATION_MESSAGE);
+//			return;
+//		}
+//	}
 
-	private void showFacts() {
-		MultifieldValue mv = (MultifieldValue) clips.eval("(find-fact " + factFilterTF.getText() + ")");
-		if (mv.size() == 0) {
-			JOptionPane.showMessageDialog(this,
-			                              "There are no facts that match the query:\n" + factFilterTF.getText(),
-			                              "Facts not found",
-			                              JOptionPane.INFORMATION_MESSAGE);
-			return;
-		}
-
-		new FactsFrame(this, factFilterTF.getText());
-	}
-
-	private void loadCLPFromPath() {
-		File file = new File(filePathTF.getText());
-
-		if (file.exists()) {
-			eval("(load \"" + filePathTF.getText() + "\")");
-			clips.reset();
-		}
-		else {
-			JOptionPane.showMessageDialog(this,
-			                              "Specified file doesn't exist.",
-			                              "Error",
-			                              JOptionPane.ERROR_MESSAGE);
-		}
-	}
+//	private void loadCLPFromPath() {
+//		File file = new File(filePathTF.getText());
+//
+//		if (file.exists()) {
+//			eval("(load \"" + filePathTF.getText() + "\")");
+//			clips.reset();
+//		}
+//		else {
+//			JOptionPane.showMessageDialog(this,
+//			                              "Specified file doesn't exist.",
+//			                              "Error",
+//			                              JOptionPane.ERROR_MESSAGE);
+//		}
+//	}
 
 	private int browseAndLoad(String fileDescription, String fileExt) {
 		// The file filter used for browsing the system for input file
