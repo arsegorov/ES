@@ -69,37 +69,37 @@ class StudentDataManager
 	private void lookupStudentIDs()
 			throws ClassNotFoundException, SQLException {
 		Class.forName("org.sqlite.JDBC");
-		Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
 
-		if (studentIDs == null) {
-			studentIDs = new Vector<>();
+		try (Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db")) {
+			if (studentIDs == null) {
+				studentIDs = new Vector<>();
+			}
+
+			Statement stat = connection.createStatement();
+
+			ResultSet rs = stat.executeQuery("SELECT DISTINCT studentID FROM outcomes;");
+			while (rs.next()) {
+				studentIDs.add(rs.getString(1));
+			}
 		}
 
-		Statement stat = connection.createStatement();
-		ResultSet rs = stat.executeQuery("SELECT DISTINCT studentID FROM outcomes;");
-		while (rs.next()) {
-			studentIDs.add(rs.getString(1));
-		}
-
-		connection.close();
 	}
 
 	private void lookupQuestions()
 			throws ClassNotFoundException, SQLException {
 		Class.forName("org.sqlite.JDBC");
-		Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
 
-		if (questionIDs == null) {
-			questionIDs = new Vector<>();
+		try (Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db")) {
+			if (questionIDs == null) {
+				questionIDs = new Vector<>();
+			}
+
+			Statement stat = connection.createStatement();
+			ResultSet rs = stat.executeQuery("SELECT DISTINCT questionID FROM outcomes;");
+			while (rs.next()) {
+				questionIDs.add(rs.getString(1));
+			}
 		}
-
-		Statement stat = connection.createStatement();
-		ResultSet rs = stat.executeQuery("SELECT DISTINCT questionID FROM outcomes;");
-		while (rs.next()) {
-			questionIDs.add(rs.getString(1));
-		}
-
-		connection.close();
 
 		lookupQuestionSkills();
 	}
@@ -107,25 +107,25 @@ class StudentDataManager
 	private void lookupQuestionSkills()
 			throws ClassNotFoundException, SQLException {
 		Class.forName("org.sqlite.JDBC");
-		Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
-		Statement stat = connection.createStatement();
-		ResultSet rs;
 
-		if (questionSkills == null) {
-			questionSkills = new HashMap<>();
-		}
+		try (Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db")) {
+			Statement stat = connection.createStatement();
+			ResultSet rs;
 
-		for (String questionID : questionIDs) {
-			Vector<String> skills = new Vector<>();
-			questionSkills.put(questionID, skills);
+			if (questionSkills == null) {
+				questionSkills = new HashMap<>();
+			}
 
-			rs = stat.executeQuery("SELECT DISTINCT skill FROM outcomes WHERE questionID = '" + questionID + "';");
-			while (rs.next()) {
-				skills.add(rs.getString(1));
+			for (String questionID : questionIDs) {
+				Vector<String> skills = new Vector<>();
+				questionSkills.put(questionID, skills);
+
+				rs = stat.executeQuery("SELECT DISTINCT skill FROM outcomes WHERE questionID = '" + questionID + "';");
+				while (rs.next()) {
+					skills.add(rs.getString(1));
+				}
 			}
 		}
-
-		connection.close();
 	}
 
 	Vector<String> getStudentIDs() {

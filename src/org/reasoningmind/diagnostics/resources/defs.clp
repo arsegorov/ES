@@ -141,11 +141,10 @@
 ;;;
 ;;; 
 ;;;
-(deffunction print$ ($?multi)
-	(if (eq (first$ $?multi) (create$)) then
-		(printout t crlf)
-	else
-		(printout t "    " (implode$ (first$ $?multi)) crlf)
-		(print$ (rest$ $?multi))
+(deffunction print$ (?prefix $?multi)
+	(while (neq $?multi (create$)) do
+		(printout Java ?prefix (nth$ 1 $?multi) crlf)
+		(bind $?multi (rest$ $?multi))
 	)
+	(printout Java crlf)
 )

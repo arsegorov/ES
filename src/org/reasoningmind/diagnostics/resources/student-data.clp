@@ -10,27 +10,27 @@
 	;
 	(student-skill
 		(student-ID "Alice")
-		(skill-ID "addition: 1-digit and 1-digit, no carrying")
+		(skill-ID "add: 1-digit and 1-digit, no carrying")
 		(level B) (trend EVEN)
 	)
 	(student-skill
 		(student-ID "Alice")
-		(skill-ID "addition: 10 and 1-digit")
+		(skill-ID "add: 10 and 1-digit")
 		(level A) (trend EVEN)
 	)
 	(student-skill
 		(student-ID "Alice")
-		(skill-ID "addition: 1-digit and 1-digit, with carrying")
+		(skill-ID "add: 1-digit and 1-digit, with carrying")
 		(level C) (trend UP)
 	)
 	(student-skill
 		(student-ID "Alice")
-		(skill-ID "caddition: 3-digit and 3-digit, no carrying")
+		(skill-ID "col add: 3-digit and 3-digit, no carrying")
 		(level D) (trend UP)
 	)
 	(student-skill
 		(student-ID "Alice")
-		(skill-ID "caddition: 3-digit and 1-digit, with 1 carrying")
+		(skill-ID "col add: 3-digit and 1-digit, with 1 carrying")
 		(level D) (trend UP)
 	)
 	(student-skill
@@ -44,12 +44,12 @@
 	;
 	(student-skill
 		(student-ID "Bob")
-		(skill-ID "addition: 1-digit and 1-digit, no carrying")
+		(skill-ID "add: 1-digit and 1-digit, no carrying")
 		(level A) (trend DOWN)
 	)
 	(student-skill
 		(student-ID "Bob")
-		(skill-ID "addition: 10 and 1-digit")
+		(skill-ID "add: 10 and 1-digit")
 		(level A) (trend EVEN)
 	)
 	(student-skill
@@ -63,22 +63,22 @@
 	;
 	(student-skill
 		(student-ID "Charlie")
-		(skill-ID "addition: 1-digit and 1-digit, no carrying")
+		(skill-ID "add: 1-digit and 1-digit, no carrying")
 		(level C) (trend UP)
 	)
 	(student-skill
 		(student-ID "Charlie")
-		(skill-ID "addition: 10 and 1-digit")
+		(skill-ID "add: 10 and 1-digit")
 		(level D) (trend EVEN)
 	)
 	(student-skill
 		(student-ID "Charlie")
-		(skill-ID "addition: 1-digit and 1-digit, with carrying")
+		(skill-ID "add: 1-digit and 1-digit, with carrying")
 		(level D) (trend EVEN)
 	)
 	(student-skill
 		(student-ID "Charlie")
-		(skill-ID "wp: what is found")
+		(skill-ID "word prob: what is found")
 		(level D) (trend EVEN)
 	)
 	(student-skill

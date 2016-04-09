@@ -6,6 +6,7 @@ package org.reasoningmind.diagnostics;
 import net.sf.clipsrules.jni.Environment;
 import net.sf.clipsrules.jni.MultifieldValue;
 import net.sf.clipsrules.jni.PrimitiveValue;
+import net.sf.clipsrules.jni.Router;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -13,6 +14,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -40,6 +44,7 @@ public class Diagnostics extends JFrame implements ActionListener
 	 * In IntelliJ Idea, the option is specified under VM Options in "Run/Debug Configurations"
 	 */
 	private Environment clips;
+	private Router router;
 
 	Environment getClips() {
 		return clips;
@@ -64,7 +69,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		// **************************
 		// Setting up the main window
 		// **************************
-		this.setTitle(resources.getString("MainWindowTitle"));
+		this.setTitle(resources.getString("MainWindow-Title"));
 		this.getContentPane().setLayout(new BorderLayout());
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -95,17 +100,61 @@ public class Diagnostics extends JFrame implements ActionListener
 
 		clips = new Environment();
 
+		router = new Router()
+		{
+			@Override
+			public int getPriority() {
+				return 40;
+			}
+
+			@Override
+			public String getName() {
+				return "Java";
+			}
+
+			@Override
+			public boolean query(String routerName) {
+				return routerName != null
+				       && (routerName.equals("Java") || routerName.equals("t") || routerName.equals("wtrace")
+				           || routerName.equals("wprompt") || routerName.equals("wdisplay")
+				           || routerName.equals("wdialog"));
+			}
+
+			@Override
+			public void print(String routerName, String printString) {
+				outputArea.append(printString);
+			}
+
+			@Override
+			public int getchar(String routerName) {
+				return 0;
+			}
+
+			@Override
+			public int ungetchar(String routerName, int theChar) {
+				return 0;
+			}
+
+			@Override
+			public boolean exit(int exitCode) {
+				return false;
+			}
+		};
+		clips.addRouter(router);
+
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/defs.clp");
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/skills.clp");
 		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/rules.clp");
 
-		outputArea.append(Environment.getVersion() + "\n" + resources.getString("CLIPSPrompt"));
+		outputArea.append(Environment.getVersion() + "\n\n" + resources.getString("CLIPS-Prompt"));
+
+		System.setOut(new PrintStream(new MyOutputStream()));
 	}
 
-	private void resetData() {
+	private void resetData() { // NOTE: data loading
 		dataManager.fetchStudentsAndQuestions(this);
 
-		studentSelector.setModel(new DefaultComboBoxModel<>(dataManager.getStudentIDs()));
+		studentSelector.setModel(new DefaultComboBoxModel<>(new Vector<>(dataManager.getStudentIDs())));
 		studentSelector.insertItemAt("", 0);
 		studentSelector.setSelectedIndex(0);
 		skillSelector.setModel(new DefaultComboBoxModel<>(new String[]{""}));
@@ -150,7 +199,7 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	private void addFilterPanel() {
 		JPanel filterPanel = new JPanel(new BorderLayout());
-		addBorder(filterPanel, "MainWindowFilterPrompt");
+		addBorder(filterPanel, "MainWindowFilterAreaTitle");
 
 		// Filter definition text field
 		factFilterTF = new JTextField("");
@@ -170,18 +219,19 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	private void addFileSelectionPanel() {
 		JPanel fileSelectionPanel = new JPanel(new BorderLayout());
-		addBorder(fileSelectionPanel, "MainWindowInputFilePrompt");
+		addBorder(fileSelectionPanel, "MainWindow-FileSelectionArea-Title");
 
 		// File path text field
 		filePathTF = new JTextField("");
-		filePathTF.addActionListener(this);
+//		filePathTF.addActionListener(this);
+		filePathTF.setEditable(false);
 		fileSelectionPanel.add(filePathTF, BorderLayout.CENTER);
 
 		// File chooser button, opens the file chooser
 		JButton browseButton = new JButton("Browse");
-		browseButton.setActionCommand("BrowseCSV");
+		browseButton.setActionCommand(resources.getString("BrowseButton-Command"));
 		browseButton.addActionListener(this);
-		fileSelectionPanel.add(browseButton, BorderLayout.EAST);
+		fileSelectionPanel.add(browseButton, BorderLayout.WEST);
 
 		this.add(fileSelectionPanel, BorderLayout.NORTH);
 	}
@@ -206,7 +256,7 @@ public class Diagnostics extends JFrame implements ActionListener
 
 		// The input line
 		JPanel promptPanel = new JPanel(new BorderLayout());
-		addBorder(promptPanel, "MainWindowCLIPSPrompt");
+		addBorder(promptPanel, "MainWindow-CLIPSArea-Title");
 
 		clipsCommandTF = new JTextField("");
 		clipsCommandTF.setPreferredSize(new Dimension(outputArea.getWidth(), 24));
@@ -225,9 +275,9 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	private void addStudentSelectionPanel() {
 		JPanel studentSelectionPanel = new JPanel(new BorderLayout());
-		addBorder(studentSelectionPanel, "MainWindowStudentSelectorPrompt");
+		addBorder(studentSelectionPanel, "MainWindowStudentSelectionAreaTitle");
 
-		JPanel selectorsPanel = new JPanel(new GridLayout(3, 1));
+		JPanel selectorsPanel = new JPanel(new GridLayout(4, 1));
 
 		studentSelector = new JComboBox<>();
 		studentSelector.addActionListener(this);
@@ -244,6 +294,11 @@ public class Diagnostics extends JFrame implements ActionListener
 		showDetailsCheckbox = new JCheckBox("Show details", false);
 		showDetailsCheckbox.addActionListener(this);
 		selectorsPanel.add(showDetailsCheckbox);
+
+		JButton runButton = new JButton(resources.getString("MainWindowRunButtonLabel"));
+		runButton.setActionCommand("RunClips");
+		runButton.addActionListener(this);
+		selectorsPanel.add(runButton);
 
 		studentSelectionPanel.add(selectorsPanel, BorderLayout.NORTH);
 		addCheerfulIcon(studentSelectionPanel);
@@ -284,29 +339,37 @@ public class Diagnostics extends JFrame implements ActionListener
 	 * @see net.sf.clipsrules.jni.Environment#eval(String)
 	 */
 	private PrimitiveValue eval(String expression) {
+		outputArea.append(expression + "\n\n");
+
 		// Escaping the back slashes in the expression before passing the string to the environment
 		// (each '\' should be changed to "\\"),
 		// then running CLIPS and getting the result
 		PrimitiveValue res = clips.eval(expression.replace("\\", "\\\\"));
 
-		// Checking if the result is a multi-filed value
-		if (res.getClass().getSimpleName().equals("MultifieldValue")) {
-			MultifieldValue mv = (MultifieldValue) res;
+		outputArea.append(printPrimitiveValue(res));
 
-			outputArea.append(expression + "\n\n");
+		return res;
+	}
+
+	private String printPrimitiveValue(PrimitiveValue pv) {
+		String res = "";
+
+		// Checking if the primitive value is a multi-filed value
+		if (pv.getClass().getSimpleName().equals("MultifieldValue")) {
+			MultifieldValue mv = (MultifieldValue) pv;
 			for (int i = 0; i < mv.size(); i++) {
-				outputArea.append(mv.get(i).toString() + "\n");
+				res += mv.get(i).toString() + "\n";
 			}
 
-			outputArea.append(resources.getString("CLIPSPrompt"));
+			res += "\n" + resources.getString("CLIPS-Prompt");
 		}
 		// ... or a void value
-		else if (res.getClass().getSimpleName().equals("VoidValue")) {
-			outputArea.append(expression + "\n\n/* Void Value */\n" + resources.getString("CLIPSPrompt"));
+		else if (pv.getClass().getSimpleName().equals("VoidValue")) {
+			res += "\n" + resources.getString("CLIPS-Prompt");
 		}
 		// ... or a single value
 		else {
-			outputArea.append(expression + "\n\n" + res.toString() + "\n" + resources.getString("CLIPSPrompt"));
+			res += pv.toString() + "\n\n" + resources.getString("CLIPS-Prompt");
 		}
 
 		return res;
@@ -315,37 +378,39 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	// Concurrency-related fields
 	private boolean clipsIsRunning = false;
-//	private Thread executionThread;
 
-//	/**
-//	 * Invokes the <code>(run)</code> command in the CLIPS environment in a separate thread.
-//	 */
-//	private void runDiagnostics() {
-//		Runnable runThread =
-//				() -> {
-//					clips.run();
-//
-//					SwingUtilities.invokeLater(
-//							() -> {
-//								clipsIsRunning = false;
-//
-//								filePathTF.setEnabled(true);
-//								clipsCommandTF.setEnabled(true);
-//								filePathTF.setEnabled(true);
-//								setCursor(Cursor.getDefaultCursor());
-//							}
-//					);
-//				};
-//
-//		clipsIsRunning = true;
-//		filePathTF.setEnabled(false);
-//		clipsCommandTF.setEnabled(false);
-//		filePathTF.setEnabled(false);
-//
-//		executionThread = new Thread(runThread);
-//		setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-//		executionThread.start();
-//	}
+	/**
+	 * Invokes the <code>(run)</code> command in the CLIPS environment in a separate thread.
+	 */
+	private void runDiagnostics() {
+		Runnable runThread =
+				() -> {
+					clips.run();
+
+					SwingUtilities.invokeLater(
+							() -> {
+								clips.reset();
+								outputArea.append(resources.getString("CLIPS-Prompt"));
+								clipsIsRunning = false;
+
+								filePathTF.setEnabled(true);
+								clipsCommandTF.setEnabled(true);
+								setCursor(Cursor.getDefaultCursor());
+							}
+					);
+				};
+
+		outputArea.setText("\nDiagnostics for " + studentSelector.getSelectedItem() + "\n\n");
+		clips.assertString("(diagnose \"" + studentSelector.getSelectedItem() + "\")");
+		clipsIsRunning = true;
+
+		filePathTF.setEnabled(false);
+		clipsCommandTF.setEnabled(false);
+
+		Thread executionThread = new Thread(runThread);
+		setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		executionThread.start();
+	}
 
 
 	private boolean studentStats = false;
@@ -362,10 +427,10 @@ public class Diagnostics extends JFrame implements ActionListener
 			return;
 		}
 
-		if (e.getActionCommand().equals("BrowseCLP")) {
+		if (e.getActionCommand().equals(resources.getString("CLIPS-LoadingCommand"))) {
 
-			if (browseAndLoad(resources.getString("CLIPSFileDescription"),
-			                  resources.getString("CLIPSFileExt"))
+			if (browseAndLoad(resources.getString("CLIPS-FileDescription"),
+			                  resources.getString("CLIPS-FileExt"))
 			    == JFileChooser.APPROVE_OPTION) {
 
 				File file = fileChooser.getSelectedFile();
@@ -375,10 +440,10 @@ public class Diagnostics extends JFrame implements ActionListener
 				clips.reset();
 			}
 		}
-		else if (e.getActionCommand().equals("BrowseCSV")) {
+		else if (e.getActionCommand().equals(resources.getString("CSV-LoadingCommand"))) {
 
-			if (browseAndLoad(resources.getString("CSVFileDescription"),
-			                  resources.getString("CSVFileExt"))
+			if (browseAndLoad(resources.getString("CSV-FileDescription"),
+			                  resources.getString("CSV-FileExt"))
 			    == JFileChooser.APPROVE_OPTION) {
 
 				File file = fileChooser.getSelectedFile();
@@ -400,6 +465,9 @@ public class Diagnostics extends JFrame implements ActionListener
 		         || e.getSource() == showDetailsCheckbox) {
 			displayStudentData(e);
 		}
+		else if (e.getActionCommand().equals("RunClips")) {
+			runDiagnostics();
+		}
 	}
 
 	private void displayStudentData(ActionEvent e) {
@@ -411,8 +479,8 @@ public class Diagnostics extends JFrame implements ActionListener
 
 		studentStats = true;
 
-		outputArea.setText("");
-		outputArea.append(studentID + "\n");
+		outputArea.setText("\n");
+		outputArea.append(studentID + "\n\n");
 
 		StudentHistory history = dataManager.getHistory(studentID);
 
@@ -446,7 +514,8 @@ public class Diagnostics extends JFrame implements ActionListener
 					response : responses) {
 
 				outputArea.append(String.format(
-						(showDetails ?"          " + response.getQuestionID() + "\n" :"") + "          %s -> %1.3f    %s\n",
+						(showDetails ?"          " + response.getQuestionID() + "\n" :"") +
+						"          %s -> %1.3f    %s\n",
 						OUTCOME[skillHistory.get(response).getOutcome()],
 						skillHistory.getSkillLevel(response),
 						showDetails ?skillHistory.get(response).printOtherSkills() :""
@@ -464,7 +533,7 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	private void executeClipsCommand() {
 		if (studentStats) {
-			outputArea.append("\n" + resources.getString("CLIPSPrompt"));
+			outputArea.append("\n" + resources.getString("CLIPS-Prompt"));
 			studentStats = false;
 		}
 
@@ -508,5 +577,13 @@ public class Diagnostics extends JFrame implements ActionListener
 		fileChooser.setFileFilter(fnef);
 
 		return fileChooser.showOpenDialog(this);
+	}
+
+	class MyOutputStream extends OutputStream
+	{
+		@Override
+		public void write(int b) throws IOException {
+			outputArea.append("" + (char) b);
+		}
 	}
 }
