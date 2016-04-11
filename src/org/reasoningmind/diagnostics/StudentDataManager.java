@@ -23,43 +23,43 @@ class StudentDataManager
 {
 	private Vector<String> studentIDs;
 	private Vector<String> questionIDs;
+	private HashMap<String, Integer> lastLesson;
 	private HashMap<String, Vector<String>> questionSkills;
 
 	void loadCSV(File csv) {
 		try {
 			Class.forName("org.sqlite.JDBC");
-			Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
 
-			Statement stat = connection.createStatement();
-			stat.executeUpdate("DROP TABLE IF EXISTS outcomes;");
-			stat.executeUpdate(
-					"CREATE TABLE outcomes (studentID, timestamp NUMERIC, questionID, isCorrect NUMERIC, skill);");
+			try (Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db")) {
 
-			PreparedStatement prep = connection.prepareStatement(
-					"INSERT INTO outcomes VALUES (?, ?, ?, ?, ?);");
+				Statement stat = connection.createStatement();
+				stat.executeUpdate("DROP TABLE IF EXISTS outcomes;");
+				stat.executeUpdate(
+						"CREATE TABLE outcomes (studentID, timestamp NUMERIC, questionID, isCorrect NUMERIC, skill);");
 
-			CSVParser csvParser =
-					CSVParser.parse(csv, StandardCharsets.UTF_8, CSVFormat.DEFAULT.withHeader());
+				PreparedStatement prep = connection.prepareStatement(
+						"INSERT INTO outcomes VALUES (?, ?, ?, ?, ?);");
 
-			for (CSVRecord record : csvParser) {
-				prep.setString(1, record.get("studentID"));
-				prep.setLong(2, Long.parseLong(record.get("timestamp")));
-				prep.setString(3,
-				               record.get("lesson") + "/" + record.get("problem") + ": " +
-				               "        ".substring(record.get("question").length()) + record.get("question") +
-				               "  #" + record.get("attempt"));
-				prep.setBoolean(4, record.get("isCorrect").equals("correct"));
-				prep.setString(5, record.get("skill"));
-				prep.addBatch();
+				try (CSVParser csvParser =
+						     CSVParser.parse(csv, StandardCharsets.UTF_8, CSVFormat.DEFAULT.withHeader())) {
+
+					for (CSVRecord record : csvParser) {
+						prep.setString(1, record.get("studentID"));
+						prep.setLong(2, Long.parseLong(record.get("timestamp")));
+						prep.setString(3,
+						               record.get("lesson") + "/" + record.get("problem") + ": " +
+						               "        ".substring(record.get("question").length()) + record.get("question") +
+						               "  #" + record.get("attempt"));
+						prep.setBoolean(4, record.get("isCorrect").equals("correct"));
+						prep.setString(5, record.get("skill"));
+						prep.addBatch();
+					}
+				}
+
+				connection.setAutoCommit(false);
+				prep.executeBatch();
+				connection.setAutoCommit(true);
 			}
-
-			csvParser.close();
-
-			connection.setAutoCommit(false);
-			prep.executeBatch();
-			connection.setAutoCommit(true);
-
-			connection.close();
 		}
 		catch (IOException | ClassNotFoundException | SQLException e) {
 			e.printStackTrace();
@@ -74,6 +74,9 @@ class StudentDataManager
 			if (studentIDs == null) {
 				studentIDs = new Vector<>();
 			}
+			if (lastLesson == null) {
+				lastLesson = new HashMap<>();
+			}
 
 			Statement stat = connection.createStatement();
 
@@ -82,7 +85,6 @@ class StudentDataManager
 				studentIDs.add(rs.getString(1));
 			}
 		}
-
 	}
 
 	private void lookupQuestions()
@@ -135,7 +137,7 @@ class StudentDataManager
 //	Vector<String> getQuestionIDs() {
 //		return questionIDs;
 //	}
-
+//
 //	Vector<String> getQuestionSkills(String questionID) {
 //		if (questionID != null && questionSkills != null) {
 //			return questionSkills.get(questionID);
@@ -162,13 +164,42 @@ class StudentDataManager
 		catch (SQLException sqle) {
 			JOptionPane.showMessageDialog(host,
 			                              Locale.getDefault().equals(new Locale("ru", "RU"))
-			                              ?"Данные об учениках не были загружены."
+			                              ?"Данные об учениках не загружены."
 			                              :"The student data has not been loaded.",
 			                              Locale.getDefault().equals(new Locale("ru", "RU")) ?"Нет данных" :"No data",
 			                              JOptionPane.WARNING_MESSAGE);
 
 			host.actionPerformed(new ActionEvent(this, 0, "BrowseCSV"));
 		}
+	}
+
+	int getLastLesson(String student) {
+		if (lastLesson.get(student) != null) {
+			return lastLesson.get(student);
+		}
+
+		lastLesson.put(student, 0);
+
+		try {
+			Class.forName("org.sqlite.JDBC");
+
+			try (Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db")) {
+
+				Statement stat = connection.createStatement();
+				ResultSet rs = stat.executeQuery(
+						"SELECT DISTINCT questionID FROM outcomes WHERE studentID='" + student +
+						"' ORDER BY questionID DESC LIMIT 1;");
+
+				if (rs.next()) {
+					lastLesson.put(student, Integer.parseInt(rs.getString("questionID").substring(0, 3)));
+				}
+			}
+		}
+		catch (ClassNotFoundException | SQLException e) {
+			e.printStackTrace();
+		}
+
+		return lastLesson.get(student);
 	}
 
 	StudentHistory getHistory(String student) {
@@ -181,19 +212,21 @@ class StudentDataManager
 
 		try {
 			Class.forName("org.sqlite.JDBC");
-			Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
 
-			Statement stat = connection.createStatement();
-			ResultSet rs = stat.executeQuery(
-					"SELECT DISTINCT timestamp, questionID, isCorrect FROM outcomes WHERE studentID='" +
-					student + "';");
+			try (Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db")) {
 
-			while (rs.next()) {
-				Long timestamp = rs.getLong("timestamp");
-				String questionID = rs.getString("questionID");
-				boolean isCorrect = rs.getBoolean("isCorrect");
+				Statement stat = connection.createStatement();
+				ResultSet rs = stat.executeQuery(
+						"SELECT DISTINCT timestamp, questionID, isCorrect FROM outcomes WHERE studentID='" + student +
+						"';");
 
-				history.put(timestamp, questionID, new HashSet<>(questionSkills.get(questionID)), isCorrect);
+				while (rs.next()) {
+					Long timestamp = rs.getLong("timestamp");
+					String questionID = rs.getString("questionID");
+					boolean isCorrect = rs.getBoolean("isCorrect");
+
+					history.put(timestamp, questionID, new HashSet<>(questionSkills.get(questionID)), isCorrect);
+				}
 			}
 		}
 		catch (ClassNotFoundException | SQLException e) {
@@ -204,34 +237,4 @@ class StudentDataManager
 
 		return history;
 	}
-//
-//	void initHistory() {
-//		for (String student : studentIDs) {
-//			StudentHistory history = new StudentHistory();
-//			put(student, history);
-//
-//			try {
-//				Class.forName("org.sqlite.JDBC");
-//				Connection connection = DriverManager.getConnection("jdbc:sqlite:studentRecords.db");
-//
-//				Statement stat = connection.createStatement();
-//				ResultSet rs = stat.executeQuery(
-//						"SELECT DISTINCT timestamp, questionID, isCorrect FROM outcomes WHERE studentID='" +
-//						student + "';");
-//
-//				while (rs.next()) {
-//					Long timestamp = rs.getLong("timestamp");
-//					String questionID = rs.getString("questionID");
-//					boolean isCorrect = rs.getBoolean("isCorrect");
-//
-//					history.put(timestamp, questionID, new HashSet<>(questionSkills.get(questionID)), isCorrect);
-//				}
-//			}
-//			catch (ClassNotFoundException | SQLException e) {
-//				e.printStackTrace();
-//			}
-//
-//			history.buildWeights();
-//		}
-//	}
 }

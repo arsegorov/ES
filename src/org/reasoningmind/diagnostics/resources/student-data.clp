@@ -15,7 +15,7 @@
 	)
 	(student-skill
 		(student-ID "Alice")
-		(skill-ID "add: 10 and 1-digit")
+		(skill-ID "add: 2R and 1-digit")
 		(level A) (trend EVEN)
 	)
 	(student-skill
@@ -49,7 +49,7 @@
 	)
 	(student-skill
 		(student-ID "Bob")
-		(skill-ID "add: 10 and 1-digit")
+		(skill-ID "add: 2R and 1-digit")
 		(level A) (trend EVEN)
 	)
 	(student-skill
@@ -68,7 +68,7 @@
 	)
 	(student-skill
 		(student-ID "Charlie")
-		(skill-ID "add: 10 and 1-digit")
+		(skill-ID "add: 2R and 1-digit")
 		(level D) (trend EVEN)
 	)
 	(student-skill

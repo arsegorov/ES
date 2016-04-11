@@ -5,9 +5,9 @@
 	
 ; mental add of nat num
 	(skill (ID "add: 1-digit and 1-digit, no carrying") (first-lesson 0) (formed-by 1) (proficient-by 1))
-	(skill (ID "add: 10 and 1-digit") (first-lesson 0) (formed-by 1) (proficient-by 1))
+	(skill (ID "add: 2R and 1-digit") (first-lesson 0) (formed-by 1) (proficient-by 1))
 	(skill (ID "add: 1-digit and 1-digit, with carrying") (first-lesson 0) (formed-by 1) (proficient-by 1)
-		(depends-on "add: 10 and 1-digit" "nat num: split <= 10")
+		(depends-on "add: 2R and 1-digit" "nat num: split <= 10")
 	)
 	(skill (ID "add: 2-digit round and 1-digit") (first-lesson 0) (formed-by 1) (proficient-by 1))
 	(skill (ID "add: 2-digit round and 2-digit round") (first-lesson 0) (formed-by 1) (proficient-by 1)

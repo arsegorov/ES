@@ -5,22 +5,20 @@
 	""
 	(declare (salience 5))
 	
-	(judgement (student-ID ?st) (skill-ID ?sk) (concern ?c&:(eq ?c HIGH)) (reason $?r))
+	(judgement (student-ID ?st) (skill-ID ?sk) (concern HIGH) (reason $?r))
 =>
-	(printout Java "  !! " ?c " concern about " (upcase ?sk) crlf
-				crlf
-				(print$ "         " $?r) crlf
-	)
+	(print-to-java "  " error "!! HIGH" reg " concern about " info (upcase ?sk) crlf 
+						crlf)
+	(print-to-java "    " $?r crlf crlf)
 )
 
 (defrule o--judgement-slight
 	""
-	(judgement (student-ID ?st) (skill-ID ?sk) (concern ?c&:(eq ?c SLIGHT)) (reason $?r))
+	(judgement (student-ID ?st) (skill-ID ?sk) (concern SLIGHT) (reason $?r))
 =>
-	(printout Java "  ?? " ?c " concern about " (upcase ?sk) crlf
-				crlf
-				(print$ "         " $?r) crlf
-	)
+	(print-to-java "  " warn "?? SLIGHT" reg " concern about " info (upcase ?sk) crlf 
+						crlf)
+	(print-to-java "    " $?r crlf crlf)
 )
 
 ;;;
@@ -43,8 +41,8 @@
 			(concern NO)
 			(reason
 				(create$
-					"Initially NO concern:"
-					"  The skill is still being formed and the student is making progress."
+					?*initially-no* crlf
+					"  The skill is still being formed and the student is making progress." crlf
 				)
 			)
 		)
@@ -68,8 +66,8 @@
 		(reason
 			(create$
 				(first$ $?r)
-				"  The skill is still being formed and the student is making progress."
-				""
+				reg "  The skill is still being formed and the student is making progress." crlf
+				crlf
 				(rest$ $?r)
 			)
 		)
@@ -96,8 +94,8 @@
 			(concern SLIGHT)
 			(reason
 				(create$
-					"Initially SLIGHT concern:"
-					"  The student appears to struggle with the increasing difficulty of the problems."
+					?*initially-slight* crlf
+					"  The student appears to struggle with the increasing difficulty of the problems." crlf
 				)
 			)
 		)
@@ -118,9 +116,9 @@
 		(concern SLIGHT)
 		(reason
 			(create$
-				"Changed to SLIGHT concern:"
-				"  The student appears to struggle with the increasing difficulty of the problems."
-				""
+				?*changed-to-slight* crlf
+				"  The student appears to struggle with the increasing difficulty of the problems." crlf
+				crlf
 				$?r
 			)
 		)
@@ -142,8 +140,8 @@
 		(reason
 			(create$
 				(first$ $?r)
-				"  The student appears to struggle with the increasing difficulty of the problems."
-				""
+				reg "  The student appears to struggle with the increasing difficulty of the problems." crlf
+				crlf
 				(rest$ $?r)
 			)
 		)
@@ -169,8 +167,9 @@
 			(concern HIGH)
 			(reason
 				(create$
-					"Initially HIGH concern:"
-					"  The student struggles with the increasing difficulty of the problems so the skill is no longer at a satisfactory level."
+					?*initially-high* crlf
+					"  The student struggles with the increasing difficulty of the problems," crlf
+					"  so the skill is no longer at a satisfactory level." crlf
 				)
 			)
 		)
@@ -192,9 +191,10 @@
 		(concern HIGH)
 		(reason
 			(create$
-				"Changed to HIGH concern:"
-				"  The student struggles with the increasing difficulty of the problems so the skill is no longer at a satisfactory level."
-				""
+				?*changed-to-high* crlf
+				"  The student struggles with the increasing difficulty of the problems," crlf
+				"  so the skill is no longer at a satisfactory level." crlf
+				crlf
 				$?r
 			)
 		)
@@ -216,8 +216,9 @@
 		(reason
 			(create$
 				(first$ $?r)
-				"  The student struggles with the increasing difficulty of the problems so the skill is no longer at a satisfactory level."
-				""
+				reg "  The student struggles with the increasing difficulty of the problems," crlf
+				"  so the skill is no longer at a satisfactory level." crlf
+				crlf
 				(rest$ $?r)
 			)
 		)
@@ -243,8 +244,8 @@
 			(concern HIGH)
 			(reason
 				(create$
-					"Initially HIGH concern:"
-					"  The student has not formed this skill and isn't making progress."
+					?*initially-high* crlf
+					"  The student has not formed this skill and isn't making progress." crlf
 				)
 			)
 		)
@@ -266,9 +267,9 @@
 		(concern HIGH)
 		(reason
 			(create$
-				"Changed to HIGH concern:"
-				"  The student has not formed this skill and isn't making progress."
-				""
+				?*changed-to-high* crlf
+				"  The student has not formed this skill and isn't making progress." crlf
+				crlf
 				$?r
 			)
 		)
@@ -290,8 +291,8 @@
 		(reason
 			(create$
 				(first$ $?r)
-				"  The student has not formed this skill and isn't making progress."
-				""
+				reg "  The student has not formed this skill and isn't making progress." crlf
+				crlf
 				(rest$ $?r)
 			)
 		)
@@ -318,9 +319,9 @@
 			(concern SLIGHT)
 			(reason
 				(create$
-					"Initially SLIGHT concern:"
-					"  The student isn't making progress on questions with very limited answer choices."
-					"  The student might be making random guesses."
+					?*initially-slight* crlf
+					"  The student isn't making progress on questions with very limited answer choices." crlf
+					"  The student might be making random guesses." crlf
 				)
 			)
 		)
@@ -342,10 +343,10 @@
 		(concern SLIGHT)
 		(reason
 			(create$
-				"Changed to SLIGHT concern:"
-				"  The student isn't making progress on questions with very limited answer choices."
-				"  The student might be making random guesses."
-				""
+				?*changed-to-slight* crlf
+				"  The student isn't making progress on questions with very limited answer choices." crlf
+				"  The student might be making random guesses." crlf
+				crlf
 				$?r
 			)
 		)
@@ -368,9 +369,9 @@
 		(reason
 			(create$
 				(first$ $?r)
-				"  The student isn't making progress on questions with very limited answer choices."
-				"  The student might be making random guesses."
-				""
+				reg "  The student isn't making progress on questions with very limited answer choices." crlf
+				"  The student might be making random guesses." crlf
+				crlf
 				(rest$ $?r)
 			)
 		)
@@ -397,8 +398,8 @@
 			(concern HIGH)
 			(reason
 				(create$
-					"Initially HIGH concern:"
-					"  The skill is essential for using the program."
+					?*initially-high* crlf
+					"  The skill is essential for using the program." crlf
 				)
 			)
 		)
@@ -421,9 +422,9 @@
 		(concern HIGH)
 		(reason
 			(create$
-				"Changed to HIGH concern:"
-				"  The skill is essential for using the program."
-				""
+				?*changed-to-high* crlf
+				"  The skill is essential for using the program." crlf
+				crlf
 				$?r
 			)
 		)
@@ -446,8 +447,8 @@
 		(reason
 			(create$
 				(first$ $?r)
-				"  The skill is essential for using the program."
-				""
+				reg "  The skill is essential for using the program."
+				crlf
 				(rest$ $?r)
 			)
 		)
@@ -465,8 +466,8 @@
 	(diagnose ?student)
 	?j <- (judgement (student-ID ?student) (skill-ID ?skill) (concern HIGH) (reason $?r))
 	(judgement (student-ID ?student) (skill-ID ?skill2) (concern HIGH))
-	(skill (ID ?skill) (depends-on $?skills&:(subsetp (create$ ?skill2) $?skills)))
-	(skill (ID ?skill3) (depends-on $?skills3&:(subsetp (create$ ?skill) $?skills3)))
+	(skill (ID ?skill) (depends-on $?skills & :(subsetp (create$ ?skill2) $?skills)))
+	(skill (ID ?skill3) (depends-on $?skills3 & :(subsetp (create$ ?skill) $?skills3)))
 	(not (judgement (student-ID ?student) (skill-ID ?skill3) (concern HIGH)))
 =>
 	(modify
@@ -474,9 +475,11 @@
 		(concern SLIGHT)
 		(reason
 			(create$
-				"Changed to SLIGHT concern:"
-				(str-cat "  There is a HIGH concern about a prerequisite, " (upcase ?skill2) ", that requires attention first.")
-				""
+				?*changed-to-slight* crlf
+				reg "  There is a higher concern about a prerequisite, " crlf
+					"    " info (upcase ?skill2) crlf
+				reg "  that requires attention first." crlf
+				crlf
 				$?r
 			)
 		)
@@ -491,17 +494,19 @@
 	(diagnose ?student)
 	?j <- (judgement (student-ID ?student) (skill-ID ?skill) (concern HIGH) (reason $?r))
 	(judgement (student-ID ?student) (skill-ID ?skill2) (concern HIGH))
-	(skill (ID ?skill) (depends-on $?skills&:(subsetp (create$ ?skill2) $?skills)))
-	(not (skill (ID ?skill3) (depends-on $?skills3&:(subsetp (create$ ?skill) $?skills3))))
+	(skill (ID ?skill) (depends-on $?skills & :(subsetp (create$ ?skill2) $?skills)))
+	(not (skill (ID ?skill3) (depends-on $?skills3 & :(subsetp (create$ ?skill) $?skills3))))
 =>
 	(modify
 		?j
 		(concern SLIGHT)
 		(reason
 			(create$
-				"Changed to SLIGHT concern:"
-				(str-cat "  There is a HIGH concern about a prerequisite, " (upcase ?skill2) ", that requires attention first.")
-				""
+				?*changed-to-slight* crlf
+				reg "  There is a higher concern about a prerequisite, " crlf
+					"    " info (upcase ?skill2) crlf
+				reg "  that requires attention first." crlf
+				crlf
 				$?r
 			)
 		)

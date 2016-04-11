@@ -141,10 +141,35 @@
 ;;;
 ;;; 
 ;;;
-(deffunction print$ (?prefix $?multi)
-	(while (neq $?multi (create$)) do
-		(printout Java ?prefix (nth$ 1 $?multi) crlf)
+(deffunction print-to-java (?prefix $?multi)
+	(bind ?router reg)
+	(bind ?first crlf)
+	
+	(while (> (length$ $?multi) 0) do
+		(if (eq ?first crlf)
+		then
+			(printout java-reg ?prefix)
+		)
+		
+		(bind ?first (nth$ 1 $?multi))
+		
+		(if (neq ?first reg info warn error)
+		then
+			(printout (sym-cat java- ?router) ?first)
+		else
+			(bind ?router ?first)
+		)
+		
 		(bind $?multi (rest$ $?multi))
 	)
-	(printout Java crlf)
+)
+
+(defglobal
+	?*initially-no* = (create$ reg "Initially " info "NO" reg " concern:")
+	?*initially-slight* = (create$ reg "Initially " info "SLIGHT" reg " concern:")
+	?*initially-high* = (create$ reg "Initially " info "HIGH" reg " concern:")
+	
+	?*changed-to-no* = (create$ reg "Changed to " info "NO" reg " concern:")
+	?*changed-to-slight* = (create$ reg "Changed to " info "SLIGHT" reg " concern:")
+	?*changed-to-high* = (create$ reg "Changed to " info "HIGH" reg " concern:")
 )
