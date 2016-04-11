@@ -141,7 +141,8 @@
 	;
 	(slot concern
 		(type SYMBOL)
-		(allowed-symbols NO SLIGHT HIGH)
+		(allowed-symbols NO SLIGHT HIGH UNDEFINED)
+		(default UNDEFINED)
 	)
 	
 	; 

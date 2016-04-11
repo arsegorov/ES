@@ -77,8 +77,8 @@
 	)
 
 ;
-; evaluation of expressions
-;--------------------------
+; evaluation
+;-----------
 	(skill (ID "add: more than 2 1-digit")
 	    (first-lesson 0) (formed-by 1) (proficient-by 1)
 		(depends-on
@@ -90,6 +90,13 @@
 		(depends-on
 		    "add: 2-digit and 2-digit, with carrying"
 		)
+	)
+
+;
+; working with expressions
+;-------------------------
+	(skill (ID "expr: substitute given number for unknown")
+	    (first-lesson 0) (formed-by 1) (proficient-by 3)
 	)
 
 ;
@@ -113,8 +120,11 @@
 ;
 ; solving word problems
 ;----------------------
-	(skill (ID "word prob: what is found")
+	(skill (ID "wp: what is found")
 	    (first-lesson 1) (limited-choices VERY)
+	)
+	(skill (ID "wp: solve \"less than given\"")
+	    (first-lesson 1) (formed-by 1) (proficient-by 5)
 	)
 
 ;
