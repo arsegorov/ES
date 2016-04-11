@@ -20,7 +20,7 @@ class FactsFrame extends JFrame
 		ResourceBundle resources = host.getResources();
 		Environment clips = host.getClips();
 
-		this.setTitle(resources.getString("FactsFrameTitle") + " [ " + filter + " ]");
+		this.setTitle(resources.getString("FactsFrame-Title") + " [ " + filter + " ]");
 		this.setLayout(new BorderLayout());
 
 		MultifieldValue mv = (MultifieldValue) clips.eval("(do-for-fact " + filter + " (fact-slot-names ?fact))");

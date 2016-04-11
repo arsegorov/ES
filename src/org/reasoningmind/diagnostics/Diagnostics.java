@@ -15,9 +15,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -40,80 +37,11 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	// CLIPS execution-related fields
 	/**
-	 * Make sure to specify -Djava.library.path="&lt;path to CLIPSJNI directory&gt;."
+	 * @apiNote Make sure to specify {@code -Djava.library.path="<path to CLIPSJNI directory>"}.
 	 * This is where the CLIPSJNI.dll is.
 	 * In IntelliJ Idea, the option is specified under VM Options in "Run/Debug Configurations"
 	 */
 	private Environment clips;
-
-	private static final String JAVA_REG = "java-reg";
-	private static final String JAVA_WARNING = "java-warn";
-	private static final String JAVA_ERROR = "java-error";
-	private static final String JAVA_INFO = "java-info";
-	private static final String WPROMPT = "wprompt";
-	private static final String WTRACE = "wtrace";
-	private static final String WDISPLAY = "wdisplay";
-	private static final String WDIALOG = "wdialog";
-	private static final String T = "t";
-
-	private final Router router = new Router()
-	{
-		@Override
-		public int getPriority() {
-			return 40;
-		}
-
-		@Override
-		public String getName() {
-			return JAVA_REG;
-		}
-
-		@Override
-		public boolean query(String routerName) {
-			return routerName != null
-			       && (routerName.equals(JAVA_ERROR) || routerName.equals(JAVA_WARNING)
-			           || routerName.equals(JAVA_INFO) || routerName.equals(JAVA_REG)
-			           || routerName.equals(T) || routerName.equals(WTRACE)
-			           || routerName.equals(WPROMPT) || routerName.equals(WDISPLAY)
-			           || routerName.equals(WDIALOG));
-		}
-
-		@Override
-		public void print(String routerName, String printString) {
-			switch (routerName) {
-			case JAVA_ERROR:
-				printToOutput(printString, STYLE_ERROR);
-				break;
-			case JAVA_WARNING:
-			case WTRACE:
-				printToOutput(printString, STYLE_WARNING);
-				break;
-			case JAVA_INFO:
-			case WDISPLAY:
-			case WPROMPT:
-				printToOutput(printString, STYLE_INFO);
-				break;
-			default:
-				printToOutput(printString, STYLE_DEFAULT);
-				break;
-			}
-		}
-
-		@Override
-		public int getchar(String routerName) {
-			return 0;
-		}
-
-		@Override
-		public int ungetchar(String routerName, int theChar) {
-			return 0;
-		}
-
-		@Override
-		public boolean exit(int exitCode) {
-			return false;
-		}
-	};
 
 	Environment getClips() {
 		return clips;
@@ -127,7 +55,7 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	/**
 	 * The default constructor that sets up the main window of the application and creates a CLIPS environment with the
-	 * diagnostics <i>defrules</i> and <i>deftemplates</i> loaded from the resources.
+	 * diagnostics' "defrules" and "deftemplates" loaded from the resources.
 	 */
 	private Diagnostics() {
 		// Accessing the resources file
@@ -135,12 +63,12 @@ public class Diagnostics extends JFrame implements ActionListener
 			return;
 		}
 
-		// **************************
-		// Setting up the main window
-		// **************************
+		/******************************/
+		/* Setting up the main window */
+		/******************************/
 		this.setTitle(resources.getString("MainWindow-Title"));
 		this.getContentPane().setLayout(new BorderLayout());
-		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
 		// The main panel of the layout
 		JPanel mainPanel = new JPanel(new BorderLayout());
@@ -153,30 +81,35 @@ public class Diagnostics extends JFrame implements ActionListener
 		// The input file selection area
 		this.addFileSelectionPanel();
 
-		// The facts filter area
-//		this.addFilterPanel();
-
 		this.addStudentSelectionPanel();
 		studentSelector.setModel(new DefaultComboBoxModel<>(new String[]{""}));
 
-		// Aligning the layout properly
+		// Setting up the final layout and location
 		this.pack();
 		this.setLocation(300, 200);
-		// Showing the main window
 		this.setVisible(true);
 
+
+		/********************************************/
+		/* Loading the data from the local database */
+		/********************************************/
 		resetData();
 
+
+		/*************************************/
+		/* Starting up the CLIPS environment */
+		/*************************************/
 		clips = new Environment();
-		clips.addRouter(router);
-		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/defs.clp");
-		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/skills.clp");
-		clips.loadFromResource("/org/reasoningmind/diagnostics/resources/rules.clp");
+
+		// This is needed for getting CLIPS output to the main window
+		clips.addRouter(new OutputRouter());
+
+		clips.loadFromResource(resources.getString("CLIPS-Definitions"));
+		clips.loadFromResource(resources.getString("CLIPS-SkillsData"));
+		clips.loadFromResource(resources.getString("CLIPS-Rules"));
 
 		printToOutput(Environment.getVersion(), STYLE_INFO);
 		printToOutput("\n\n" + resources.getString("CLIPS-Prompt"), STYLE_DEFAULT);
-
-		System.setOut(new PrintStream(new MyOutputStream()));
 	}
 
 	private void printToOutput(String printString, String style) {
@@ -189,7 +122,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		}
 	}
 
-	private void resetData() { // NOTE: data loading
+	private void resetData() {
 		dataManager.fetchStudentsAndQuestions(this);
 
 		studentSelector.setModel(new DefaultComboBoxModel<>(new Vector<>(dataManager.getStudentIDs())));
@@ -234,25 +167,25 @@ public class Diagnostics extends JFrame implements ActionListener
 	}
 
 	// Parts of user interface
-	private JTextField factFilterTF;
+//	private JTextField factFilterTF;
 
-	private void addFilterPanel() {
-		JPanel filterPanel = new JPanel(new BorderLayout());
-		addBorder(filterPanel, "MainWindowFilterAreaTitle");
-
-		// Filter definition text field
-		factFilterTF = new JTextField("");
-		factFilterTF.addActionListener(this);
-		filterPanel.add(factFilterTF, BorderLayout.CENTER);
-
-		// Filter run button
-		JButton showFacts = new JButton("Show Facts");
-		showFacts.setActionCommand("ShowFacts");
-		showFacts.addActionListener(this);
-		filterPanel.add(showFacts, BorderLayout.EAST);
-
-		this.add(filterPanel, BorderLayout.SOUTH);
-	}
+//	private void addFilterPanel() {
+//		JPanel filterPanel = new JPanel(new BorderLayout());
+//		addBorder(filterPanel, "MainWindowFilterAreaTitle");
+//
+//		// Filter definition text field
+//		factFilterTF = new JTextField("");
+//		factFilterTF.addActionListener(this);
+//		filterPanel.add(factFilterTF, BorderLayout.CENTER);
+//
+//		// Filter run button
+//		JButton showFacts = new JButton("Show Facts");
+//		showFacts.setActionCommand("ShowFacts");
+//		showFacts.addActionListener(this);
+//		filterPanel.add(showFacts, BorderLayout.EAST);
+//
+//		this.add(filterPanel, BorderLayout.SOUTH);
+//	}
 
 	private JTextField filePathTF;
 
@@ -321,7 +254,7 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	private void defineOutputStyles(StyleContext styleContext) {
 		final Style defaultStyle = styleContext.addStyle(STYLE_DEFAULT, null);
-		defaultStyle.addAttribute(StyleConstants.FontFamily, "Consolas");
+		defaultStyle.addAttribute(StyleConstants.FontFamily, Font.MONOSPACED);
 		defaultStyle.addAttribute(StyleConstants.FontSize, 12);
 
 		final Style boldStyle = styleContext.addStyle(STYLE_BOLD, defaultStyle);
@@ -344,7 +277,7 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	private void addStudentSelectionPanel() {
 		JPanel studentSelectionPanel = new JPanel(new BorderLayout());
-		addBorder(studentSelectionPanel, "MainWindowStudentSelectionAreaTitle");
+		addBorder(studentSelectionPanel, "MainWindow-StudentSelectionArea-Title");
 
 		JPanel selectorsPanel = new JPanel(new GridLayout(4, 1));
 
@@ -364,7 +297,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		showDetailsCheckbox.addActionListener(this);
 		selectorsPanel.add(showDetailsCheckbox);
 
-		JButton runButton = new JButton(resources.getString("MainWindowRunButtonLabel"));
+		JButton runButton = new JButton(resources.getString("MainWindow-RunDiagnosticsButton-Label"));
 		runButton.setActionCommand("RunClips");
 		runButton.addActionListener(this);
 		selectorsPanel.add(runButton);
@@ -394,16 +327,15 @@ public class Diagnostics extends JFrame implements ActionListener
 
 
 	/**
-	 * This is a convenience method. It passes the <code>expression</code> onto the
-	 * <code><b>net.sf.clipsrules.jni.Environment.eval</b>(String)</code>
+	 * This is a convenience method. It passes the {@code expression} onto the
+	 * {@link net.sf.clipsrules.jni.Environment#eval}
 	 * method and displays
-	 * the result in the <a
-	 * href="#outputArea">output area</a>.
+	 * the result in the {@link #outputArea}.
 	 *
 	 * @param expression
 	 * 		the CLIPS expression to pass onto the <code><b>Environment.eval</b>(String)</code> method
 	 *
-	 * @return the result of the <code><b>Environment.eval</b>(String)</code> method
+	 * @return the result of the {@code Environment.eval(String)} method
 	 *
 	 * @see net.sf.clipsrules.jni.Environment#eval(String)
 	 */
@@ -449,7 +381,7 @@ public class Diagnostics extends JFrame implements ActionListener
 	private boolean clipsIsRunning = false;
 
 	/**
-	 * Invokes the <code>(run)</code> command in the CLIPS environment in a separate thread.
+	 * Invokes the {@code (run)} command in the CLIPS environment in a separate thread.
 	 */
 	private void runDiagnostics() {
 		Runnable runThread =
@@ -470,7 +402,7 @@ public class Diagnostics extends JFrame implements ActionListener
 				};
 
 		outputArea.setText("\nDiagnostics for " + studentSelector.getSelectedItem() + "\n\n");
-		clips.assertString("(diagnose \"" + studentSelector.getSelectedItem() + "\")");
+		initializeClips();
 		clipsIsRunning = true;
 
 		filePathTF.setEnabled(false);
@@ -479,6 +411,47 @@ public class Diagnostics extends JFrame implements ActionListener
 		Thread executionThread = new Thread(runThread);
 		setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 		executionThread.start();
+	}
+
+	private void initializeClips() {
+		String student = (String) studentSelector.getSelectedItem();
+
+		StudentHistory history = dataManager.getHistory(student);
+		int lastLesson = dataManager.getLastLesson(student);
+
+		clips.assertString(String.format("(diagnose \"%s\")", student.replace("\\", "\\\\")
+		                                                             .replace("\"", "\\\"")));
+		clips.assertString(String.format("(student (ID \"%s\") (lesson %d))",
+		                                 student.replace("\\", "\\\\")
+		                                        .replace("\"", "\\\""),
+		                                 lastLesson
+		                   )
+		);
+
+		Set<String> skills = history.keySet();
+
+		for (String skill : skills) {
+			StudentHistory.SkillHistory skillHistory = history.get(skill);
+			double level = skillHistory.getSkillLevel(), trend = skillHistory.trend();
+
+			clips.assertString(String.format("(student-skill (student-ID \"%s\") (skill-ID \"%s\") " +
+			                                 "(level %s) (trend %s) (count %d))",
+			                                 student.replace("\\", "\\\\")
+			                                        .replace("\"", "\\\""),
+			                                 skill.replace("\\", "\\\\")
+			                                      .replace("\"", "\\\""),
+			                                 level < 0.6 ?"F"
+			                                             :level < 0.7 ?"D"
+			                                                          :level < 0.85 ?"C"
+			                                                                        :level < 0.95 ?"B"
+			                                                                                      :"A",
+			                                 trend < -0.05 ?"DOWN"
+			                                               :trend <= 0.05 ?"EVEN"
+			                                                              :"UP",
+			                                 skillHistory.size()
+			                   )
+			);
+		}
 	}
 
 
@@ -522,10 +495,10 @@ public class Diagnostics extends JFrame implements ActionListener
 				resetData();
 			}
 		}
-		else if (e.getActionCommand().equals("ShowFacts")
-		         || e.getSource() == factFilterTF) {
-			showFacts();
-		}
+//		else if (e.getActionCommand().equals("ShowFacts")
+//		         || e.getSource() == factFilterTF) {
+//			showFacts();
+//		}
 		else if (e.getSource() == clipsCommandTF) {
 			executeClipsCommand();
 		}
@@ -548,7 +521,7 @@ public class Diagnostics extends JFrame implements ActionListener
 
 		studentStats = true;
 
-		Integer lastLesson = dataManager.getLastLesson(studentID);
+		int lastLesson = dataManager.getLastLesson(studentID);
 		StudentHistory history = dataManager.getHistory(studentID);
 
 		outputArea.setText("\n");
@@ -614,18 +587,18 @@ public class Diagnostics extends JFrame implements ActionListener
 		clips.printBanner();
 	}
 
-	private void showFacts() {
-		MultifieldValue mv = (MultifieldValue) clips.eval("(find-fact " + factFilterTF.getText() + ")");
-		if (mv.size() == 0) {
-			JOptionPane.showMessageDialog(this,
-			                              "There are no facts that match the query:\n" + factFilterTF.getText(),
-			                              "Facts not found",
-			                              JOptionPane.INFORMATION_MESSAGE);
-			return;
-		}
-
-		new FactsFrame(this, factFilterTF.getText());
-	}
+//	private void showFacts() {
+//		MultifieldValue mv = (MultifieldValue) clips.eval("(find-fact " + factFilterTF.getText() + ")");
+//		if (mv.size() == 0) {
+//			JOptionPane.showMessageDialog(this,
+//			                              "There are no facts that match the query:\n" + factFilterTF.getText(),
+//			                              "Facts not found",
+//			                              JOptionPane.INFORMATION_MESSAGE);
+//			return;
+//		}
+//
+//		new FactsFrame(this, factFilterTF.getText());
+//	}
 
 //	private void loadCLPFromPath() {
 //		File file = new File(filePathTF.getText());
@@ -650,11 +623,83 @@ public class Diagnostics extends JFrame implements ActionListener
 		return fileChooser.showOpenDialog(this);
 	}
 
-	private class MyOutputStream extends OutputStream
+//	private class MyOutputStream extends OutputStream
+//	{
+//		@Override
+//		public void write(int b) throws IOException {
+//			printToOutput("" + (char) b, STYLE_INFO);
+//		}
+//	}
+
+	/**
+	 * An implementation of the Router interface that is needed for routing CLIPS output to this application.
+	 */
+	private class OutputRouter implements Router
 	{
+		private static final String JAVA_REG = "java-reg";
+		private static final String JAVA_WARNING = "java-warn";
+		private static final String JAVA_ERROR = "java-error";
+		private static final String JAVA_INFO = "java-info";
+		private static final String WPROMPT = "wprompt";
+		private static final String WTRACE = "wtrace";
+		private static final String WDISPLAY = "wdisplay";
+		private static final String WDIALOG = "wdialog";
+		private static final String T = "t";
+
 		@Override
-		public void write(int b) throws IOException {
-			printToOutput("" + (char) b, STYLE_INFO);
+		public int getPriority() {
+			return 40;
+		}
+
+		@Override
+		public String getName() {
+			return JAVA_REG;
+		}
+
+		@Override
+		public boolean query(String routerName) {
+			return routerName != null
+			       && (routerName.equals(JAVA_ERROR) || routerName.equals(JAVA_WARNING)
+			           || routerName.equals(JAVA_INFO) || routerName.equals(JAVA_REG)
+			           || routerName.equals(T) || routerName.equals(WTRACE)
+			           || routerName.equals(WPROMPT) || routerName.equals(WDISPLAY)
+			           || routerName.equals(WDIALOG));
+		}
+
+		@Override
+		public void print(String routerName, String printString) {
+			switch (routerName) {
+			case JAVA_ERROR:
+				printToOutput(printString, STYLE_ERROR);
+				break;
+			case JAVA_WARNING:
+			case WTRACE:
+				printToOutput(printString, STYLE_WARNING);
+				break;
+			case JAVA_INFO:
+			case WDISPLAY:
+			case WPROMPT:
+				printToOutput(printString, STYLE_INFO);
+				break;
+			default:
+				printToOutput(printString, STYLE_DEFAULT);
+				break;
+			}
+		}
+
+		@Override
+		public int getchar(String routerName) {
+			return 0;
+		}
+
+		@Override
+		public int ungetchar(String routerName, int theChar) {
+			return 0;
+		}
+
+		@Override
+		public boolean exit(int exitCode) {
+			return false;
 		}
 	}
 }

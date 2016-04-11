@@ -50,11 +50,18 @@
 		(default NO)
 	)
 	
-	; 
+	; Whether the skill is essential for the student's success
+	; (for example, being able to follow written instructions)
 	(slot essential
 		(type SYMBOL)
 		(allowed-symbols TRUE FALSE)
 		(default FALSE)
+	)
+
+	; The minimum number of answers for meaningful reasoning
+	(slot minimum-meaningful-count
+	    (type INTEGER)
+	    (default 3)
 	)
 )
 
@@ -88,6 +95,11 @@
 		(type SYMBOL)
 		(default ?NONE)
 		(allowed-symbols DOWN EVEN UP)
+	)
+
+	; The number of questions in the student's history
+	(slot count
+	    (type INTEGER)
 	)
 )
 
@@ -141,14 +153,14 @@
 ;;;
 ;;; 
 ;;;
-(deffunction print-to-java (?prefix $?multi)
+(deffunction print-to-java (?indent-string $?multi)
 	(bind ?router reg)
 	(bind ?first crlf)
 	
 	(while (> (length$ $?multi) 0) do
 		(if (eq ?first crlf)
 		then
-			(printout java-reg ?prefix)
+			(printout java-reg ?indent-string)
 		)
 		
 		(bind ?first (nth$ 1 $?multi))
@@ -162,14 +174,4 @@
 		
 		(bind $?multi (rest$ $?multi))
 	)
-)
-
-(defglobal
-	?*initially-no* = (create$ reg "Initially " info "NO" reg " concern:")
-	?*initially-slight* = (create$ reg "Initially " info "SLIGHT" reg " concern:")
-	?*initially-high* = (create$ reg "Initially " info "HIGH" reg " concern:")
-	
-	?*changed-to-no* = (create$ reg "Changed to " info "NO" reg " concern:")
-	?*changed-to-slight* = (create$ reg "Changed to " info "SLIGHT" reg " concern:")
-	?*changed-to-high* = (create$ reg "Changed to " info "HIGH" reg " concern:")
 )

@@ -9,7 +9,8 @@
 =>
 	(print-to-java "  " error "!! HIGH" reg " concern about " info (upcase ?sk) crlf 
 						crlf)
-	(print-to-java "    " $?r crlf crlf)
+	(print-to-java "    " $?r crlf
+	               crlf)
 )
 
 (defrule o--judgement-slight
@@ -18,12 +19,33 @@
 =>
 	(print-to-java "  " warn "?? SLIGHT" reg " concern about " info (upcase ?sk) crlf 
 						crlf)
-	(print-to-java "    " $?r crlf crlf)
+	(print-to-java "    " $?r crlf
+	               crlf)
 )
 
 ;;;
 ;;; Judgement rules
 ;;;
+
+; These pre-formatted lines are often used in explanations
+(defglobal
+	?*initially-no* = (create$ reg "Initially, " info "NO" reg " concern:")
+	?*initially-slight* = (create$ reg "Initially, " info "SLIGHT" reg " concern:")
+	?*initially-high* = (create$ reg "Initially, " info "HIGH" reg " concern:")
+
+	?*changed-to-no* = (create$ reg "Changed to " info "NO" reg " concern:")
+	?*changed-to-slight* = (create$ reg "Changed to " info "SLIGHT" reg " concern:")
+	?*changed-to-high* = (create$ reg "Changed to " info "HIGH" reg " concern:")
+)
+
+;;;
+;;; These rules apply when the skill level is increasing,
+;;; and the skill is still being developed by the course
+;;;
+(defglobal ?*not-formed--trend-up--explanation* =
+    (create$ reg "  The student's accuracy is going " info "UP" reg ", while the skill is still being formed.")
+)
+
 (defrule j--not-formed--trend-up--no-j
 	""
 	(declare (salience 10))
@@ -42,7 +64,7 @@
 			(reason
 				(create$
 					?*initially-no* crlf
-					"  The skill is still being formed and the student is making progress." crlf
+					?*not-formed--trend-up--explanation* crlf
 				)
 			)
 		)
@@ -65,10 +87,10 @@
 		?j
 		(reason
 			(create$
-				(first$ $?r)
-				reg "  The skill is still being formed and the student is making progress." crlf
+				(subseq$ $?r 1 (member$ crlf $?r))
+				?*not-formed--trend-up--explanation* crlf
 				crlf
-				(rest$ $?r)
+				(subseq$ $?r (+ (member$ crlf $?r) 1) (length$ $?r))
 			)
 		)
 	)
@@ -79,6 +101,11 @@
 ;;;
 ;;; 
 ;;;
+(defglobal ?*level-high--trend-down--explanation* =
+    (create$ reg "  The student might be struggling with the increasing difficulty of the problems:" crlf
+                 "  the student's accuracy is still at a good level, but going down.")
+)
+
 (defrule j--level-high--trend-down--no-j
 	""
 	(declare (salience 10))
@@ -95,7 +122,7 @@
 			(reason
 				(create$
 					?*initially-slight* crlf
-					"  The student appears to struggle with the increasing difficulty of the problems." crlf
+					?*level-high--trend-down--explanation* crlf
 				)
 			)
 		)
@@ -117,7 +144,7 @@
 		(reason
 			(create$
 				?*changed-to-slight* crlf
-				"  The student appears to struggle with the increasing difficulty of the problems." crlf
+				?*level-high--trend-down--explanation* crlf
 				crlf
 				$?r
 			)
@@ -139,10 +166,10 @@
 		?j
 		(reason
 			(create$
-				(first$ $?r)
-				reg "  The student appears to struggle with the increasing difficulty of the problems." crlf
+				(subseq$ $?r 1 (member$ crlf $?r))
+				?*level-high--trend-down--explanation* crlf
 				crlf
-				(rest$ $?r)
+				(subseq$ $?r (+ (member$ crlf $?r) 1) (length$ $?r))
 			)
 		)
 	)
@@ -152,6 +179,11 @@
 ;;;
 ;;; 
 ;;;
+(defglobal ?*level-medium-low--trend-down--explanation* =
+    (create$ reg "  The student might be struggling with the increasing difficulty of the problems:" crlf
+                 "  the accuracy is going down and the current level of skill is low.")
+)
+
 (defrule j--level-medium-low--trend-down--no-j
 	""
 	(declare (salience 10))
@@ -168,8 +200,7 @@
 			(reason
 				(create$
 					?*initially-high* crlf
-					"  The student struggles with the increasing difficulty of the problems," crlf
-					"  so the skill is no longer at a satisfactory level." crlf
+					?*level-medium-low--trend-down--explanation* crlf
 				)
 			)
 		)
@@ -192,8 +223,7 @@
 		(reason
 			(create$
 				?*changed-to-high* crlf
-				"  The student struggles with the increasing difficulty of the problems," crlf
-				"  so the skill is no longer at a satisfactory level." crlf
+				?*level-medium-low--trend-down--explanation* crlf
 				crlf
 				$?r
 			)
@@ -215,11 +245,10 @@
 		?j
 		(reason
 			(create$
-				(first$ $?r)
-				reg "  The student struggles with the increasing difficulty of the problems," crlf
-				"  so the skill is no longer at a satisfactory level." crlf
+				(subseq$ $?r 1 (member$ crlf $?r))
+				?*level-medium-low--trend-down--explanation* crlf
 				crlf
-				(rest$ $?r)
+				(subseq$ $?r (+ (member$ crlf $?r) 1) (length$ $?r))
 			)
 		)
 	)
@@ -229,6 +258,10 @@
 ;;;
 ;;; 
 ;;;
+(defglobal ?*level-low--trend-even-down--explanation* =
+    (create$ reg "  The student's accuracy is low and isn't improving.")
+)
+
 (defrule j--level-low--trend-even-down--no-j
 	""
 	(declare (salience 10))
@@ -245,7 +278,7 @@
 			(reason
 				(create$
 					?*initially-high* crlf
-					"  The student has not formed this skill and isn't making progress." crlf
+					?*level-low--trend-even-down--explanation* crlf
 				)
 			)
 		)
@@ -268,7 +301,7 @@
 		(reason
 			(create$
 				?*changed-to-high* crlf
-				"  The student has not formed this skill and isn't making progress." crlf
+				?*level-low--trend-even-down--explanation* crlf
 				crlf
 				$?r
 			)
@@ -290,10 +323,10 @@
 		?j
 		(reason
 			(create$
-				(first$ $?r)
-				reg "  The student has not formed this skill and isn't making progress." crlf
+				(subseq$ $?r 1 (member$ crlf $?r))
+				?*level-low--trend-even-down--explanation* crlf
 				crlf
-				(rest$ $?r)
+				(subseq$ $?r (+ (member$ crlf $?r) 1) (length$ $?r))
 			)
 		)
 	)
@@ -303,6 +336,11 @@
 ;;;
 ;;; 
 ;;;
+(defglobal ?*level-low--trend-even--very-limited-choices--explanation* =
+    (create$ reg "  The student isn't making progress on questions with very limited answer choices." crlf
+                 "  The student might be making random guesses.")
+)
+
 (defrule j--level-low--trend-even--very-limited-choices--no-j
 	""
 	(declare (salience 10))
@@ -320,8 +358,7 @@
 			(reason
 				(create$
 					?*initially-slight* crlf
-					"  The student isn't making progress on questions with very limited answer choices." crlf
-					"  The student might be making random guesses." crlf
+					?*level-low--trend-even--very-limited-choices--explanation* crlf
 				)
 			)
 		)
@@ -344,8 +381,7 @@
 		(reason
 			(create$
 				?*changed-to-slight* crlf
-				"  The student isn't making progress on questions with very limited answer choices." crlf
-				"  The student might be making random guesses." crlf
+				?*level-low--trend-even--very-limited-choices--explanation* crlf
 				crlf
 				$?r
 			)
@@ -368,11 +404,10 @@
 		?j
 		(reason
 			(create$
-				(first$ $?r)
-				reg "  The student isn't making progress on questions with very limited answer choices." crlf
-				"  The student might be making random guesses." crlf
+				(subseq$ $?r 1 (member$ crlf $?r))
+				?*level-low--trend-even--very-limited-choices--explanation* crlf
 				crlf
-				(rest$ $?r)
+				(subseq$ $?r (+ (member$ crlf $?r) 1) (length$ $?r))
 			)
 		)
 	)
@@ -382,6 +417,10 @@
 ;;;
 ;;; 
 ;;;
+(defglobal ?*missing-essential--explanation* =
+    (create$ reg "  The skill is essential for using the program.")
+)
+
 (defrule j--missing-essential--no-j
 	""
 	(declare (salience 10))
@@ -399,7 +438,7 @@
 			(reason
 				(create$
 					?*initially-high* crlf
-					"  The skill is essential for using the program." crlf
+					?*missing-essential--explanation* crlf
 				)
 			)
 		)
@@ -423,7 +462,7 @@
 		(reason
 			(create$
 				?*changed-to-high* crlf
-				"  The skill is essential for using the program." crlf
+				?*missing-essential--explanation* crlf
 				crlf
 				$?r
 			)
@@ -446,10 +485,10 @@
 		?j
 		(reason
 			(create$
-				(first$ $?r)
-				reg "  The skill is essential for using the program."
+				(subseq$ $?r 1 (member$ crlf $?r))
+				?*missing-essential--explanation* crlf
 				crlf
-				(rest$ $?r)
+				(subseq$ $?r (+ (member$ crlf $?r) 1) (length$ $?r))
 			)
 		)
 	)
