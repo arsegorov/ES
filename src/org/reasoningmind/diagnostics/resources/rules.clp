@@ -8,8 +8,8 @@
 	(judgement (student-ID ?st) (skill-ID ?sk) (concern HIGH) (reason $?r))
 =>
 	(print-to-java
-	    "  " error "!! HIGH" reg " concern about " info (upcase ?sk) crlf
-		crlf
+	    "   " error "!! HIGH" reg " concern about " crlf
+	    "      " info (upcase ?sk) crlf
 	)
 	(print-to-java
 	    "    " $?r crlf
@@ -23,8 +23,8 @@
 	(judgement (student-ID ?st) (skill-ID ?sk) (concern SLIGHT) (reason $?r))
 =>
 	(print-to-java
-	    "  " warn "?? SLIGHT" reg " concern about " info (upcase ?sk) crlf
-		crlf
+	    "   " warn "?? SLIGHT" reg " concern about " crlf
+        "      " info (upcase ?sk) crlf
     )
 	(print-to-java
 	    "    " $?r crlf
@@ -38,8 +38,8 @@
 	(judgement (student-ID ?st) (skill-ID ?sk) (concern NO) (reason $?r))
 =>
 	(print-to-java
-	    "  " info "** NO" reg " concern about " info (upcase ?sk) crlf
-		crlf
+	    "   " info "** NO" reg " concern about " crlf
+        "      " info (upcase ?sk) crlf
     )
 	(print-to-java
 	    "    " $?r crlf
@@ -53,8 +53,8 @@
 	(judgement (student-ID ?st) (skill-ID ?sk) (concern UNDEFINED) (reason $?r))
 =>
 	(print-to-java
-	    "  " info "~~ UNDEFINED" reg " concern about " info (upcase ?sk) crlf
-		crlf
+	    "   " info "~~ UNDEFINED" reg " concern about " crlf
+        "      " info (upcase ?sk) crlf
     )
 	(print-to-java
 	    "    " $?r crlf
@@ -70,15 +70,11 @@
 
     ; These pre-formatted lines are often used in explanations
 
-	?*initially-undefined* = (create$ reg "* Initially, " info "UNDEFINED" reg " concern *")
-	?*initially-no* = (create$ reg "* Initially, " info "NO" reg " concern *")
-	?*initially-slight* = (create$ reg "* Initially, " info "SLIGHT" reg " concern *")
-	?*initially-high* = (create$ reg "* Initially, " info "HIGH" reg " concern *")
+	?*initially-undefined* = (create$ reg "  * Changed from " info "UNDEFINED" reg " *")
+	?*initially-no* = (create$ reg "  * Changed from " info "NO" reg " *")
+	?*initially-slight* = (create$ reg "  * Changed from " info "SLIGHT" reg " *")
+	?*initially-high* = (create$ reg "  * Changed from " info "HIGH" reg " *")
 
-	?*changed-to-undefined* = (create$ reg "* Concern changed to " info "UNDEFINED" reg " *")
-	?*changed-to-no* = (create$ reg "* Concern changed to " info "NO" reg " *")
-	?*changed-to-slight* = (create$ reg "* Concern changed to " info "SLIGHT" reg " *")
-	?*changed-to-high* = (create$ reg "* Concern changed to " info "HIGH" reg " *")
 )
 
 ;;;
@@ -106,7 +102,6 @@
 			(concern NO)
 			(reason
 				(create$
-					?*initially-no* crlf
 					?*not-formed--trend-up--explanation* crlf
 				)
 			)
@@ -130,10 +125,9 @@
 		?j
 		(reason
 			(create$
-				(subseq$ $?r 1 (member$ crlf $?r))
 				?*not-formed--trend-up--explanation* crlf
 				crlf
-				(subseq$ $?r (+ (member$ crlf $?r) 1) (length$ $?r))
+				$?r
 			)
 		)
 	)
@@ -164,7 +158,6 @@
 			(concern SLIGHT)
 			(reason
 				(create$
-					?*initially-slight* crlf
 					?*level-high--trend-down--explanation* crlf
 				)
 			)
@@ -186,10 +179,10 @@
 		(concern SLIGHT)
 		(reason
 			(create$
-				?*changed-to-slight* crlf
 				?*level-high--trend-down--explanation* crlf
 				crlf
-				$?r
+				?*initially-no* crlf
+                $?r
 			)
 		)
 	)
@@ -209,10 +202,9 @@
 		?j
 		(reason
 			(create$
-				(subseq$ $?r 1 (member$ crlf $?r))
 				?*level-high--trend-down--explanation* crlf
 				crlf
-				(subseq$ $?r (+ (member$ crlf $?r) 1) (length$ $?r))
+				$?r
 			)
 		)
 	)
@@ -242,7 +234,6 @@
 			(concern HIGH)
 			(reason
 				(create$
-					?*initially-high* crlf
 					?*level-medium-low--trend-down--explanation* crlf
 				)
 			)
@@ -258,16 +249,16 @@
 	(diagnose ?student)
 	(student-skill (student-ID ?student) (skill-ID ?skill) (level C|D|F) (trend DOWN))
 	(not (judged ?student ?skill decrease-concern--prerequisite-high))
-	?j <- (judgement (student-ID ?student) (skill-ID ?skill) (concern SLIGHT|NO) (reason $?r))
+	?j <- (judgement (student-ID ?student) (skill-ID ?skill) (concern ?c&SLIGHT|NO) (reason $?r))
 =>
 	(modify
 		?j
 		(concern HIGH)
 		(reason
 			(create$
-				?*changed-to-high* crlf
 				?*level-medium-low--trend-down--explanation* crlf
 				crlf
+				(if (eq ?c SLIGHT) then ?*initially-slight* else ?*initially-no*) crlf
 				$?r
 			)
 		)
@@ -288,10 +279,9 @@
 		?j
 		(reason
 			(create$
-				(subseq$ $?r 1 (member$ crlf $?r))
 				?*level-medium-low--trend-down--explanation* crlf
 				crlf
-				(subseq$ $?r (+ (member$ crlf $?r) 1) (length$ $?r))
+				$?r
 			)
 		)
 	)
@@ -320,7 +310,6 @@
 			(concern HIGH)
 			(reason
 				(create$
-					?*initially-high* crlf
 					?*level-low--trend-even-down--explanation* crlf
 				)
 			)
@@ -336,16 +325,16 @@
 	(diagnose ?student)
 	(student-skill (student-ID ?student) (skill-ID ?skill) (level D|F) (trend EVEN|DOWN))
 	(not (judged ?student ?skill decrease-concern--prerequisite-high))
-	?j <- (judgement (student-ID ?student) (skill-ID ?skill) (concern SLIGHT|NO) (reason $?r))
+	?j <- (judgement (student-ID ?student) (skill-ID ?skill) (concern ?c & SLIGHT|NO) (reason $?r))
 =>
 	(modify
 		?j
 		(concern HIGH)
 		(reason
 			(create$
-				?*changed-to-high* crlf
 				?*level-low--trend-even-down--explanation* crlf
 				crlf
+				(if (eq ?c SLIGHT) then ?*initially-slight* else ?*initially-no*) crlf
 				$?r
 			)
 		)
@@ -366,10 +355,9 @@
 		?j
 		(reason
 			(create$
-				(subseq$ $?r 1 (member$ crlf $?r))
 				?*level-low--trend-even-down--explanation* crlf
 				crlf
-				(subseq$ $?r (+ (member$ crlf $?r) 1) (length$ $?r))
+				$?r
 			)
 		)
 	)
@@ -401,7 +389,6 @@
 			(concern SLIGHT)
 			(reason
 				(create$
-					?*initially-slight* crlf
 					?*level-low--trend-even--very-limited-choices--explanation* crlf
 				)
 			)
@@ -410,7 +397,7 @@
 	(assert (judged ?student ?skill level-low--trend-even--very-limited-choices))
 )
 
-(defrule j--level-low--trend-even--very-limited-choices--concern-no
+(defrule j--level-low--trend-even--very-limited-choices--concern-none
 	""
 	(declare (salience 40))
 	
@@ -424,9 +411,9 @@
 		(concern SLIGHT)
 		(reason
 			(create$
-				?*changed-to-slight* crlf
 				?*level-low--trend-even--very-limited-choices--explanation* crlf
 				crlf
+				?*initially-no*
 				$?r
 			)
 		)
@@ -448,10 +435,9 @@
 		?j
 		(reason
 			(create$
-				(subseq$ $?r 1 (member$ crlf $?r))
 				?*level-low--trend-even--very-limited-choices--explanation* crlf
 				crlf
-				(subseq$ $?r (+ (member$ crlf $?r) 1) (length$ $?r))
+				$?r
 			)
 		)
 	)
@@ -482,7 +468,6 @@
 			(concern HIGH)
 			(reason
 				(create$
-					?*initially-high* crlf
 					?*missing-essential--explanation* crlf
 				)
 			)
@@ -499,16 +484,16 @@
 	(student-skill (student-ID ?student) (skill-ID ?skill) (level D|F))
 	(skill (ID ?skill) (essential TRUE))
 	(not (judged ?student ?skill decrease-concern--prerequisite-high))
-	?j <- (judgement (student-ID ?student) (skill-ID ?skill) (concern SLIGHT|NO) (reason $?r))
+	?j <- (judgement (student-ID ?student) (skill-ID ?skill) (concern ?c&SLIGHT|NO) (reason $?r))
 =>
 	(modify
 		?j
 		(concern HIGH)
 		(reason
 			(create$
-				?*changed-to-high* crlf
 				?*missing-essential--explanation* crlf
 				crlf
+				(if (eq ?c SLIGHT) then ?*initially-slight* else ?*initially-no*) crlf
 				$?r
 			)
 		)
@@ -530,10 +515,9 @@
 		?j
 		(reason
 			(create$
-				(subseq$ $?r 1 (member$ crlf $?r))
 				?*missing-essential--explanation* crlf
 				crlf
-				(subseq$ $?r (+ (member$ crlf $?r) 1) (length$ $?r))
+                $?r
 			)
 		)
 	)
@@ -559,11 +543,11 @@
 		(concern SLIGHT)
 		(reason
 			(create$
-				?*changed-to-slight* crlf
 				reg "  There is a higher concern about a prerequisite, " crlf
 					"    " info (upcase ?skill2) crlf
 				reg "  that requires attention first." crlf
 				crlf
+				?*initially-high*
 				$?r
 			)
 		)
@@ -586,11 +570,11 @@
 		(concern SLIGHT)
 		(reason
 			(create$
-				?*changed-to-slight* crlf
 				reg "  There is a higher concern about a prerequisite, " crlf
 					"    " info (upcase ?skill2) crlf
 				reg "  that requires attention first." crlf
 				crlf
+				?*initially-high*
 				$?r
 			)
 		)
@@ -621,7 +605,6 @@
 			(skill-ID ?skill)
             (reason
                 (create$
-                    ?*initially-undefined* crlf
                     ?*exclude-concern--low-count--explanation* crlf
                 )
             )
@@ -637,15 +620,15 @@
     (diagnose ?student)
     (skill (ID ?skill) (minimum-meaningful-count ?minc))
     (student-skill (student-ID ?student) (skill-ID ?skill) (count ?c & :(< ?c ?minc)))
-    ?j <- (judgement (student-ID ?student) (skill-ID ?skill) (concern SLIGHT|HIGH) (reason $?r))
+    ?j <- (judgement (student-ID ?student) (skill-ID ?skill) (concern ?con & SLIGHT|HIGH) (reason $?r))
 =>
     (modify ?j
         (concern UNDEFINED)
         (reason
             (create$
-                ?*changed-to-undefined* crlf
 				?*exclude-concern--low-count--explanation* crlf
 				crlf
+				(if (eq ?con HIGH) then ?*initially-high* else ?*initially-slight*) crlf
 				$?r
             )
         )
@@ -675,7 +658,6 @@
             (skill-ID ?skill)
             (reason
                 (create$
-                    ?*initially-undefined* crlf
                     ?*no-skill-description--explanation* crlf
                 )
             )
@@ -706,7 +688,6 @@
             (skill-ID ?skill)
             (reason
                 (create$
-                    ?*initially-undefined* crlf
                     ?*no-other-applicable-judgement-rule--explanation* crlf
                 )
             )

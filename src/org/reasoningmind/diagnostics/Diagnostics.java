@@ -15,6 +15,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -29,7 +30,7 @@ public class Diagnostics extends JFrame implements ActionListener
 	private final JFileChooser fileChooser = new JFileChooser();
 
 	// Application text resources
-	private ResourceBundle resources;
+	private static ResourceBundle resources;
 
 	ResourceBundle getResources() {
 		return resources;
@@ -147,7 +148,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		return true;
 	}
 
-	private void addBorder(JPanel panel, String resourceID) {
+	private static void addBorder(JPanel panel, String resourceID) {
 		panel.setBorder(BorderFactory.createTitledBorder(
 				BorderFactory.createEtchedBorder(),
 				resources.getString(resourceID)
@@ -156,14 +157,14 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	private void addCheerfulIcon(JPanel parent) {
 		JLabel iconLabel = new JLabel();
-		iconLabel.setIcon(
-				new ImageIcon(
-						getClass().getClassLoader()
-						          .getResource("org/reasoningmind/diagnostics/resources/data_input_label.png")
-				)
-		);
+		URL imageURL = getClass().getClassLoader()
+		                         .getResource("org/reasoningmind/diagnostics/resources/data_input_label.png");
 
-		parent.add(iconLabel, BorderLayout.SOUTH);
+		if (imageURL != null) {
+			iconLabel.setIcon(new ImageIcon(imageURL));
+
+			parent.add(iconLabel, BorderLayout.SOUTH);
+		}
 	}
 
 	// Parts of user interface
@@ -225,11 +226,14 @@ public class Diagnostics extends JFrame implements ActionListener
 		// The log text area
 
 		StyleContext styleContext = new StyleContext();
-		defineOutputStyles(styleContext);
 
 		output = new DefaultStyledDocument(styleContext);
-
 		outputArea = new JTextPane(output);
+
+		// note: this line should remain after the line "new outputArea = JTextPane(output);"
+		// otherwise, the FontFamily = "monospaced" in defineOutputStyles() doesn't appear to work
+		defineOutputStyles(styleContext);
+
 		outputArea.setPreferredSize(new Dimension(500, 400));
 		outputArea.setEditable(false);
 		outputArea.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
@@ -254,7 +258,7 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	private void defineOutputStyles(StyleContext styleContext) {
 		final Style defaultStyle = styleContext.addStyle(STYLE_DEFAULT, null);
-		defaultStyle.addAttribute(StyleConstants.FontFamily, Font.MONOSPACED);
+		defaultStyle.addAttribute(StyleConstants.FontFamily, "Courier New");
 		defaultStyle.addAttribute(StyleConstants.FontSize, 12);
 
 		final Style boldStyle = styleContext.addStyle(STYLE_BOLD, defaultStyle);
@@ -267,7 +271,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		warningStyle.addAttribute(StyleConstants.Foreground, Color.decode(MY_ORANGE));
 
 		final Style infoStyle = styleContext.addStyle(STYLE_INFO, defaultStyle);
-		infoStyle.addAttribute(StyleConstants.Italic, true);
+//		infoStyle.addAttribute(StyleConstants.Italic, true);
 		infoStyle.addAttribute(StyleConstants.Foreground, Color.BLUE);
 	}
 
