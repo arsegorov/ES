@@ -3,10 +3,7 @@
  */
 package org.reasoningmind.diagnostics;
 
-import net.sf.clipsrules.jni.Environment;
-import net.sf.clipsrules.jni.MultifieldValue;
-import net.sf.clipsrules.jni.PrimitiveValue;
-import net.sf.clipsrules.jni.Router;
+import net.sf.clipsrules.jni.*;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -213,13 +210,6 @@ public class Diagnostics extends JFrame implements ActionListener
 	private JTextPane outputArea;
 	private StyledDocument output;
 
-	private static final String STYLE_DEFAULT = "default";
-	private static final String STYLE_BOLD = "bold";
-	private static final String STYLE_INFO = "info";
-	private static final String STYLE_ERROR = "error";
-	private static final String STYLE_WARNING = "warning";
-	private static final String MY_ORANGE = "0xD88844";
-
 	private void addClipsPanel(JPanel parent) {
 		JPanel clipsPanel = new JPanel(new BorderLayout());
 
@@ -256,6 +246,15 @@ public class Diagnostics extends JFrame implements ActionListener
 		parent.add(clipsPanel, BorderLayout.CENTER);
 	}
 
+	private static final String STYLE_DEFAULT = "default";
+	private static final String STYLE_BOLD = "bold";
+	private static final String STYLE_NICE = "nice";
+	private static final String STYLE_INFO = "info";
+	private static final String STYLE_WARNING = "warning";
+	private static final String STYLE_ERROR = "error";
+	private static final String MY_ORANGE = "0x7F6600";
+	private static final String MY_GREEN = "0x007F00";
+
 	private void defineOutputStyles(StyleContext styleContext) {
 		final Style defaultStyle = styleContext.addStyle(STYLE_DEFAULT, null);
 		defaultStyle.addAttribute(StyleConstants.FontFamily, "Courier New");
@@ -269,6 +268,9 @@ public class Diagnostics extends JFrame implements ActionListener
 
 		final Style warningStyle = styleContext.addStyle(STYLE_WARNING, boldStyle);
 		warningStyle.addAttribute(StyleConstants.Foreground, Color.decode(MY_ORANGE));
+
+		final Style niceStyle = styleContext.addStyle(STYLE_NICE, boldStyle);
+		niceStyle.addAttribute(StyleConstants.Foreground, Color.decode(MY_GREEN));
 
 		final Style infoStyle = styleContext.addStyle(STYLE_INFO, defaultStyle);
 //		infoStyle.addAttribute(StyleConstants.Italic, true);
@@ -360,7 +362,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		String res = "";
 
 		// Checking if the primitive value is a multi-filed value
-		if (pv.getClass().getSimpleName().equals("MultifieldValue")) {
+		if (pv instanceof  MultifieldValue) {
 			MultifieldValue mv = (MultifieldValue) pv;
 			for (int i = 0; i < mv.size(); i++) {
 				res += mv.get(i).toString() + "\n";
@@ -369,7 +371,7 @@ public class Diagnostics extends JFrame implements ActionListener
 			res += "\n" + resources.getString("CLIPS-Prompt");
 		}
 		// ... or a void value
-		else if (pv.getClass().getSimpleName().equals("VoidValue")) {
+		else if (pv instanceof VoidValue) {
 			res += "\n" + resources.getString("CLIPS-Prompt");
 		}
 		// ... or a single value
@@ -394,7 +396,6 @@ public class Diagnostics extends JFrame implements ActionListener
 
 					SwingUtilities.invokeLater(
 							() -> {
-								clips.reset();
 								printToOutput(resources.getString("CLIPS-Prompt"), STYLE_DEFAULT);
 								clipsIsRunning = false;
 
@@ -418,8 +419,9 @@ public class Diagnostics extends JFrame implements ActionListener
 	}
 
 	private void initializeClips() {
-		String student = (String) studentSelector.getSelectedItem();
+		clips.reset();
 
+		String student = (String) studentSelector.getSelectedItem();
 		StudentHistory history = dataManager.getHistory(student);
 		int lastLesson = dataManager.getLastLesson(student);
 
@@ -446,8 +448,8 @@ public class Diagnostics extends JFrame implements ActionListener
 			                                      .replace("\"", "\\\""),
 			                                 level < 0.6 ?"F"
 			                                             :level < 0.7 ?"D"
-			                                                          :level < 0.85 ?"C"
-			                                                                        :level < 0.95 ?"B"
+			                                                          :level < 0.8 ?"C"
+			                                                                        :level < 0.9 ?"B"
 			                                                                                      :"A",
 			                                 trend < -0.05 ?"DOWN"
 			                                               :trend <= 0.05 ?"EVEN"
@@ -541,7 +543,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		}
 
 		if (e.getSource() == studentSelector) {
-			skillSelector.setModel(new DefaultComboBoxModel<>(new Vector<String>(new ConcurrentSkipListSet<>(skills))));
+			skillSelector.setModel(new DefaultComboBoxModel<>(new Vector<>(new ConcurrentSkipListSet<>(skills))));
 			skillSelector.insertItemAt("", 0);
 			skillSelector.setSelectedIndex(0);
 		}
@@ -641,6 +643,8 @@ public class Diagnostics extends JFrame implements ActionListener
 	private class OutputRouter implements Router
 	{
 		private static final String JAVA_REG = "java-reg";
+		private static final String JAVA_BOLD = "java-bold";
+		private static final String JAVA_NICE = "java-nice";
 		private static final String JAVA_WARNING = "java-warn";
 		private static final String JAVA_ERROR = "java-error";
 		private static final String JAVA_INFO = "java-info";
@@ -664,7 +668,8 @@ public class Diagnostics extends JFrame implements ActionListener
 		public boolean query(String routerName) {
 			return routerName != null
 			       && (routerName.equals(JAVA_ERROR) || routerName.equals(JAVA_WARNING)
-			           || routerName.equals(JAVA_INFO) || routerName.equals(JAVA_REG)
+			           || routerName.equals(JAVA_INFO) || routerName.equals(JAVA_NICE)
+			           || routerName.equals(JAVA_BOLD) || routerName.equals(JAVA_REG)
 			           || routerName.equals(T) || routerName.equals(WTRACE)
 			           || routerName.equals(WPROMPT) || routerName.equals(WDISPLAY)
 			           || routerName.equals(WDIALOG));
@@ -684,6 +689,12 @@ public class Diagnostics extends JFrame implements ActionListener
 			case WDISPLAY:
 			case WPROMPT:
 				printToOutput(printString, STYLE_INFO);
+				break;
+			case JAVA_NICE:
+				printToOutput(printString, STYLE_NICE);
+				break;
+			case JAVA_BOLD:
+				printToOutput(printString, STYLE_BOLD);
 				break;
 			default:
 				printToOutput(printString, STYLE_DEFAULT);

@@ -38,7 +38,7 @@
 	(judgement (student-ID ?st) (skill-ID ?sk) (concern NO) (reason $?r))
 =>
 	(print-to-java
-	    "   " info "** NO" reg " concern about " crlf
+	    "   " nice "** NO" reg " concern about " crlf
         "      " info (upcase ?sk) crlf
     )
 	(print-to-java
@@ -76,6 +76,7 @@
 	?*initially-high* = (create$ reg "  * Changed from " info "HIGH" reg " *")
 
 )
+
 
 ;;;
 ;;; These rules apply when the skill level is increasing,
@@ -132,6 +133,61 @@
 		)
 	)
 	(assert (judged ?student ?skill not-formed--trend-up))
+)
+
+
+;;;
+;;; These rules apply when the skill level is high, and is not going down
+;;;
+(defglobal ?*level-high--explanation* =
+    (create$ reg "  The student's accuracy is " info "HIGH" reg " and " info "not going down" reg ".")
+)
+
+(defrule j--level-high--no-j
+	""
+	(declare (salience 40))
+	
+	(diagnose ?student)
+	(student-skill (student-ID ?student) (skill-ID ?skill) (level A|B) (trend EVEN|UP) (count ?c))
+	(skill (ID ?skill) (minimum-meaningful-count ?min&:(>= ?c ?min)))
+	(not (judgement (student-ID ?student) (skill-ID ?skill)))
+=>
+	(assert
+		(judgement
+			(student-ID ?student)
+			(skill-ID ?skill)
+			(concern NO)
+			(reason
+				(create$
+					?*level-high--explanation* crlf
+				)
+			)
+		)
+	)
+	(assert (judged ?student ?skill level-high))
+)
+
+(defrule j--level-high--concern-none
+	""
+	(declare (salience 40))
+	
+	(diagnose ?student)
+	(student-skill (student-ID ?student) (skill-ID ?skill) (level A|B) (trend EVEN|UP) (count ?c))
+	(skill (ID ?skill) (minimum-meaningful-count ?min&:(>= ?c ?min)))
+	(not (judged ?student ?skill level-high))
+	?j <- (judgement (student-ID ?student) (skill-ID ?skill) (concern NO) (reason $?r))
+=>
+	(modify
+		?j
+		(reason
+			(create$
+				?*level-high--explanation* crlf
+				crlf
+				$?r
+			)
+		)
+	)
+	(assert (judged ?student ?skill level-high))
 )
 
 
@@ -619,21 +675,21 @@
 
     (diagnose ?student)
     (skill (ID ?skill) (minimum-meaningful-count ?minc))
-    (student-skill (student-ID ?student) (skill-ID ?skill) (count ?c & :(< ?c ?minc)))
+    ?ref <- (student-skill (student-ID ?student) (skill-ID ?skill) (count ?c & :(< ?c ?minc)))
     ?j <- (judgement (student-ID ?student) (skill-ID ?skill) (concern ?con & SLIGHT|HIGH) (reason $?r))
 =>
+    (assert (judged ?student ?skill exclude-concern--low-count))
     (modify ?j
         (concern UNDEFINED)
         (reason
             (create$
-				?*exclude-concern--low-count--explanation* crlf
+				?*exclude-concern--low-count--explanation* " (see " ?ref ")" crlf
 				crlf
 				(if (eq ?con HIGH) then ?*initially-high* else ?*initially-slight*) crlf
 				$?r
             )
         )
     )
-    (assert (judged ?student ?skill exclude-concern--low-count))
 )
 
 
@@ -694,4 +750,14 @@
         )
     )
     (assert (judged ?student ?skill no-other-applicable-judgement-rule))
+)
+
+(defrule no-skill-definition
+    ""
+    (declare (salience 50))
+
+    (student-skill (skill-ID ?s))
+    (not (skill (ID ?s)))
+=>
+    (assert (skill (ID ?s) (first-lesson 0)))
 )

@@ -166,7 +166,7 @@
 		
 		(bind ?first (nth$ 1 $?multi))
 		
-		(if (neq ?first reg info warn error)
+		(if (neq ?first reg bold nice info warn error)
 		then
 			(printout (sym-cat java- ?router) ?first)
 		else

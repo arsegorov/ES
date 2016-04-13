@@ -58,7 +58,7 @@
 		    "add: 2-digit round and 2-digit"
 		)
 	)
-	(skill (ID "add: 2-digit and 2-digit, no carrying")
+	(skill (ID "+: 2- and 2-, NC")
 	    (first-lesson 0) (formed-by 1) (proficient-by 1)
 		(depends-on
 		    "nat num: expanded form"

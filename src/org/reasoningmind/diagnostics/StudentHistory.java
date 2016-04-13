@@ -212,7 +212,7 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 
 		// How many history entries to take into account when calculating different stats
 		private static final int HISTORY_LOOKUP_DEPTH = 10;
-		private static final double ONE_PLUS_THRESHOLD = 1 + 1.0/HISTORY_LOOKUP_DEPTH;
+//		private static final double ONE_PLUS_THRESHOLD = 1 + 1.0/HISTORY_LOOKUP_DEPTH;
 
 		// Store the most recent history (up to HISTORY_LOOKUP_DEPTH items) for faster processing of new items
 		private Vector<Double> recentWeights;
@@ -342,13 +342,15 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 				int outcome = rec.getOutcome();
 
 				// the record's weight for the purposes of skill level estimation
-				double weight = getRecordWeight(totalRecentWeight, totalRecentOutcomes, outcome);
+				double weight = (outcome == FAIL_A_SINGLE_SKILL || outcome == PASS)
+				?1.0
+				:0; // getRecordWeight(totalRecentWeight, totalRecentOutcomes, outcome);
 				int outcomeValue = outcome == PASS ?1 :0;
 
 				totalRecentWeight += weight;
 				totalRecentOutcomes += outcomeValue;
 
-				rec.setLevel(((double) totalRecentOutcomes)/totalRecentWeight);
+				rec.setLevel(getSkillLevel());
 
 				recentWeights.add(0, weight);
 				recentOutcomes.add(0, outcomeValue);
@@ -369,26 +371,26 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 			}
 		}
 
-		/**
-		 * Calculates the weight of a response given its outcome.
-		 *
-		 * @param totRecWeight
-		 * 		the total weight of the previous {@link #HISTORY_LOOKUP_DEPTH} records
-		 * @param totRecOutcomes
-		 * 		the total of the outcomes of the previous {@link #HISTORY_LOOKUP_DEPTH} records
-		 * @param outcome
-		 * 		the outcome of this response; should be {@link #PASS}, {@link #FAIL_A_SINGLE_SKILL}, or {@link
-		 * 		#FAIL_MULTIPLE_SKILLS}
-		 *
-		 * @return the weight of the response
-		 */
-		private double getRecordWeight(double totRecWeight, double totRecOutcomes, int outcome) {
-			return (outcome == FAIL_A_SINGLE_SKILL || outcome == PASS)
-			       ?1.0
-			       :(ONE_PLUS_THRESHOLD - (totRecWeight == 0
-			                               ?0.5
-			                               :totRecOutcomes/totRecWeight));
-		}
+//		/**
+//		 * Calculates the weight of a response given its outcome.
+//		 *
+//		 * @param totRecWeight
+//		 * 		the total weight of the previous {@link #HISTORY_LOOKUP_DEPTH} records
+//		 * @param totRecOutcomes
+//		 * 		the total of the outcomes of the previous {@link #HISTORY_LOOKUP_DEPTH} records
+//		 * @param outcome
+//		 * 		the outcome of this response; should be {@link #PASS}, {@link #FAIL_A_SINGLE_SKILL}, or {@link
+//		 * 		#FAIL_MULTIPLE_SKILLS}
+//		 *
+//		 * @return the weight of the response
+//		 */
+//		private double getRecordWeight(double totRecWeight, double totRecOutcomes, int outcome) {
+//			return (outcome == FAIL_A_SINGLE_SKILL || outcome == PASS)
+//			       ?1.0
+//			       :(ONE_PLUS_THRESHOLD - (totRecWeight == 0
+//			                               ?0.5
+//			                               :totRecOutcomes/totRecWeight));
+//		}
 
 		private static final int TREND_LOOKUP_DEPTH = 10;
 
@@ -398,7 +400,7 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 		 * @return skill level trend
 		 */
 		double trend() {
-			if (isEmpty()) {
+			if (isEmpty() || totalRecentWeight == 0) {
 				return 0;
 			}
 
