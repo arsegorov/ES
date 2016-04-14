@@ -1,6 +1,17 @@
-;;;
-;;; Output rules
-;;;
+;**************;
+; Output rules ;
+;**************;
+
+;;; These rules fire at the end, when all the judgement is done.
+;;; We need separate rules to keep the output in the desired order
+;;; The saliences are as follows:
+;;;   UNDEFINED 6: for debugging, will change later
+;;;   HIGH 5
+;;;   SLIGHT 4
+;;;   NO 3
+;;;---------------------------------------------------------------
+
+; When concern = HIGH
 (defrule o--judgement-high
 	""
 	(declare (salience 5))
@@ -17,6 +28,7 @@
 	)
 )
 
+; When concern = SLIGHT
 (defrule o--judgement-slight
 	""
 	(declare (salience 4))
@@ -32,6 +44,7 @@
 	)
 )
 
+; When concern = NO
 (defrule o--judgement-no
 	""
 	(declare (salience 3))
@@ -47,6 +60,7 @@
 	)
 )
 
+; When concern = UNDEFINED
 (defrule o--judgement-undefined
 	""
 	(declare (salience 6))
@@ -62,30 +76,41 @@
 	)
 )
 
-;;;
-;;; Judgement rules
-;;;
 
+;*****************;
+; Judgement rules ;
+;*****************;
+
+
+;#####################;
+; Some reused strings ;
+;#####################;
 (defglobal
-
     ; These pre-formatted lines are often used in explanations
-
-	?*initially-undefined* = (create$ reg "  * Changed from " info "UNDEFINED" reg " *")
-	?*initially-no* = (create$ reg "  * Changed from " info "NO" reg " *")
-	?*initially-slight* = (create$ reg "  * Changed from " info "SLIGHT" reg " *")
-	?*initially-high* = (create$ reg "  * Changed from " info "HIGH" reg " *")
-
+	?*initially-undefined* = (create$ reg "  (*) Changed from " info "UNDEFINED")
+	?*initially-no* = (create$ reg "  (*) Changed from " info "NO")
+	?*initially-slight* = (create$ reg "  (*) Changed from " info "SLIGHT")
+	?*initially-high* = (create$ reg "  (*) Changed from " info "HIGH")
 )
 
 
 ;;;
 ;;; These rules apply when the skill level is increasing,
-;;; and the skill is still being developed by the course
+;;; and the skill is still being developed by the course.
 ;;;
+;;; The rules fire when
+;;;   trend = UP
+;;; and the student is within the range of lessons,
+;;; in which the skill is developed
+;;;
+;;; Judgement:
+;;;   concern = NO
+;;;-----------------------------------------------------
 (defglobal ?*not-formed--trend-up--explanation* =
-    (create$ reg "  The student's accuracy is going " info "UP" reg ", while the skill is still being formed.")
+    (create$ reg "  The student's accuracy is going " info "up" reg ", while the skill is still being formed.")
 )
 
+; The version for the case when there is NO INITIAL JUDGEMENT
 (defrule j--not-formed--trend-up--no-j
 	""
 	(declare (salience 40))
@@ -111,6 +136,7 @@
 	(assert (judged ?student ?skill not-formed--trend-up))
 )
 
+; The version for the case when there is already NO CONCERN
 (defrule j--not-formed--trend-up--concern-none
 	""
 	(declare (salience 40))
@@ -137,19 +163,38 @@
 
 
 ;;;
-;;; These rules apply when the skill level is high, and is not going down
+;;; These rules apply when the skill level is high and
+;;; not going down
 ;;;
-(defglobal ?*level-high--explanation* =
-    (create$ reg "  The student's accuracy is " info "HIGH" reg " and " info "not going down" reg ".")
+;;; The rules fire when
+;;;   level = A|B|C, trend = UP
+;;; or
+;;;   level = A|B, trend = EVEN
+;;;
+;;; Judgement:
+;;;   concern = NO
+;;;-----------------------------------------------------
+(defglobal ?*level-medium-high--explanation* =
+    (create$ reg "  The student's accuracy is at a " nice "high" reg " level and is " info "steady" reg ".")
 )
 
-(defrule j--level-high--no-j
+; The version for the case when there is NO INITIAL JUDGEMENT
+(defrule j--level-medium-high--no-j
 	""
 	(declare (salience 40))
 	
 	(diagnose ?student)
-	(student-skill (student-ID ?student) (skill-ID ?skill) (level A|B) (trend EVEN|UP) (count ?c))
-	(skill (ID ?skill) (minimum-meaningful-count ?min&:(>= ?c ?min)))
+	(student-skill
+		(student-ID ?student)
+		(skill-ID ?skill)
+		(level ?l & A|B|C)
+		(trend ?t & UP|EVEN&:(neq (eq ?t EVEN) (eq ?l C)))
+		(count ?c)
+	)
+	(skill
+		(ID ?skill)
+		(minimum-meaningful-count ?min & :(>= ?c ?min))
+	)
 	(not (judgement (student-ID ?student) (skill-ID ?skill)))
 =>
 	(assert
@@ -159,46 +204,76 @@
 			(concern NO)
 			(reason
 				(create$
-					?*level-high--explanation* crlf
+					(replace$ (replace$ ?*level-medium-high--explanation*
+				                        3 4
+										(if (neq ?l A B) then (create$ info "high") else (create$ nice "meduim"))
+							  )
+							  7 8
+							  (if (eq ?t UP) then (create$ nice "going up") else (create$ bold "steady"))
+					) crlf
 				)
 			)
 		)
 	)
-	(assert (judged ?student ?skill level-high))
+	(assert (judged ?student ?skill level-medium-high))
 )
 
-(defrule j--level-high--concern-none
+; The version for the case when there is NO CONCERN
+(defrule j--level-medium-high--concern-none
 	""
 	(declare (salience 40))
 	
 	(diagnose ?student)
-	(student-skill (student-ID ?student) (skill-ID ?skill) (level A|B) (trend EVEN|UP) (count ?c))
-	(skill (ID ?skill) (minimum-meaningful-count ?min&:(>= ?c ?min)))
-	(not (judged ?student ?skill level-high))
+	(student-skill
+		(student-ID ?student)
+		(skill-ID ?skill)
+		(level ?l & A|B|C)
+		(trend ?t & UP|EVEN&:(neq (eq ?t EVEN) (eq ?l C)))
+		(count ?c)
+	)
+	(skill
+		(ID ?skill)
+		(minimum-meaningful-count ?min & :(>= ?c ?min))
+	)
+	(not (judged ?student ?skill level-medium-high))
 	?j <- (judgement (student-ID ?student) (skill-ID ?skill) (concern NO) (reason $?r))
 =>
 	(modify
 		?j
 		(reason
 			(create$
-				?*level-high--explanation* crlf
+				(replace$ (replace$ ?*level-medium-high--explanation*
+				                    3 4
+									(if (neq ?l A B) then (create$ info "high") else (create$ nice "meduim"))
+						  )
+						  7 8
+						  (if (eq ?t UP) then (create$ nice "going up") else (create$ bold "steady"))
+				) crlf
 				crlf
 				$?r
 			)
 		)
 	)
-	(assert (judged ?student ?skill level-high))
+	(assert (judged ?student ?skill level-medium-high))
 )
 
 
 ;;;
-;;; 
+;;; These rules apply when the skill level is high, but
+;;; is going down
+;;;
+;;; The rules fire when
+;;;   level = A|B, trend = DOWN
+;;;
+;;; Judgement:
+;;;   concern = SLIGHT
 ;;;
 (defglobal ?*level-high--trend-down--explanation* =
     (create$ reg "  The student might be struggling with the increasing difficulty of the problems:" crlf
-                 "  the student's accuracy is still at a " info "good level" reg ", but " info "going down" reg ".")
+                 "  the student's accuracy is still at a " nice "good level" reg ", but is " warn "going down" reg ".")
 )
 
+; The version for the case when there is NO INITIAL JUDGEMENT
 (defrule j--level-high--trend-down--no-j
 	""
 	(declare (salience 40))
@@ -222,6 +297,7 @@
 	(assert (judged ?student ?skill level-high--trend-down))
 )
 
+; The version for the case when there is already NO CONCERN
 (defrule j--level-high--trend-down--concern-none
 	""
 	(declare (salience 40))
@@ -245,6 +321,7 @@
 	(assert (judged ?student ?skill level-high--trend-down))
 )
 
+; The version for the case when there is already a SLIGHT CONCERN
 (defrule j--level-high--trend-down--concern-slight
 	""
 	(declare (salience 40))
@@ -272,12 +349,13 @@
 ;;;
 (defglobal ?*level-medium-low--trend-down--explanation* =
     (create$ reg "  The student might be struggling with the increasing difficulty of the problems:" crlf
-                 "  the accuracy is " info "going down" reg " and the current level of skill is " info "low" reg ".")
+                 "  the student's accuracy is " error "low" reg " and is " error "going down" reg ".")
 )
 
+; The version for the case when there is NO INITIAL JUDGEMENT
 (defrule j--level-medium-low--trend-down--no-j
 	""
-	(declare (salience 40))
+	(declare (salience 41)) ; this has a higher priority than the more generic level-low--trend-even-down
 	
 	(diagnose ?student)
 	(student-skill (student-ID ?student) (skill-ID ?skill) (level C|D|F) (trend DOWN))
@@ -298,9 +376,11 @@
 	(assert (judged ?student ?skill level-medium-low--trend-down))
 )
 
+; The version for the case when there is already a SLIGHT or NO CONCERN
 (defrule j--level-medium-low--trend-down--concern-slight-none
 	""
-	(declare (salience 40))
+	; this has a higher priority than the more generic level-low--trend-even-down, which is 40
+	(declare (salience 41))
 	
 	(diagnose ?student)
 	(student-skill (student-ID ?student) (skill-ID ?skill) (level C|D|F) (trend DOWN))
@@ -322,9 +402,11 @@
 	(assert (judged ?student ?skill level-medium-low--trend-down))
 )
 
+; The version for the case when there is already a HIGH CONCERN
 (defrule j--level-medium-low--trend-down--concern-high
 	""
-	(declare (salience 40))
+	; this has a higher priority than the more generic level-low--trend-even-down, which is 40
+	(declare (salience 41))
 	
 	(diagnose ?student)
 	(student-skill (student-ID ?student) (skill-ID ?skill) (level C|D|F) (trend DOWN))
@@ -348,7 +430,7 @@
 ;;; 
 ;;;
 (defglobal ?*level-low--trend-even-down--explanation* =
-    (create$ reg "  The student's accuracy is " info "low" reg " and " info "isn't improving" reg ".")
+    (create$ reg "  The student's accuracy is " error "low" reg " and is " warn "not improving" reg ".")
 )
 
 (defrule j--level-low--trend-even-down--no-j
@@ -405,6 +487,7 @@
 	(diagnose ?student)
 	(student-skill (student-ID ?student) (skill-ID ?skill) (level D|F) (trend EVEN|DOWN))
 	(not (judged ?student ?skill level-low--trend-even-down))
+	(not (judged ?student ?skill level-medium-low--trend-down))
 	?j <- (judgement (student-ID ?student) (skill-ID ?skill) (concern HIGH) (reason $?r))
 =>
 	(modify
@@ -424,9 +507,9 @@
 ;;; 
 ;;;
 (defglobal ?*level-low--trend-even--very-limited-choices--explanation* =
-    (create$ reg "  The student's accuracy " info "isn't improving" reg " even though" crlf
+    (create$ reg "  The student's accuracy is " error "low" reg " and is " warn "not improving" reg ", even though" crlf
                  "  the questions have " info "very few answer choices" reg "." crlf
-                 "  The student might be " info "making random guesses" reg ".")
+                 "  The student " info "might be making random guesses" reg ".")
 )
 
 (defrule j--level-low--trend-even--very-limited-choices--no-j
@@ -484,7 +567,7 @@
 	(diagnose ?student)
 	(student-skill (student-ID ?student) (skill-ID ?skill) (level D|F) (trend EVEN))
 	(skill (ID ?skill) (limited-choices VERY))
-;	(not (judged ?student ?skill level-low--trend-even--very-limited-choices))
+	(not (judged ?student ?skill level-low--trend-even--very-limited-choices))
 	?j <- (judgement (student-ID ?student) (skill-ID ?skill) (concern SLIGHT) (reason $?r))
 =>	
 	(modify
@@ -504,8 +587,8 @@
 ;;; 
 ;;;
 (defglobal ?*missing-essential--explanation* =
-    (create$ reg "  The skill is essential for using the program," crlf
-                 "  but student's accuracy is " info "low" reg ".")
+    (create$ reg "  The skill is " warn "essential" reg " for using the program," crlf
+                 "  but student's accuracy is " error "low" reg ".")
 )
 
 (defrule j--missing-essential--no-j
@@ -642,8 +725,8 @@
 ;;;
 ;;;
 (defglobal ?*exclude-concern--low-count--explanation* =
-    (create$ reg "  There's " info "not enough data" reg " to draw conclusions yet," crlf
-                 "  we had " info "too few opportunities" reg " to test this skill for this student.")
+    (create$ reg "  There's " warn "not enough data" reg " to draw conclusions yet." crlf
+                 "  We didn't have enough opportunities to test this skill for this student.")
 )
 
 (defrule exclude-concern--low-count--no-j
@@ -659,6 +742,7 @@
         (judgement
 			(student-ID ?student)
 			(skill-ID ?skill)
+			(concern UNDEFINED)
             (reason
                 (create$
                     ?*exclude-concern--low-count--explanation* crlf
@@ -675,7 +759,7 @@
 
     (diagnose ?student)
     (skill (ID ?skill) (minimum-meaningful-count ?minc))
-    ?ref <- (student-skill (student-ID ?student) (skill-ID ?skill) (count ?c & :(< ?c ?minc)))
+    (student-skill (student-ID ?student) (skill-ID ?skill) (count ?c & :(< ?c ?minc)))
     ?j <- (judgement (student-ID ?student) (skill-ID ?skill) (concern ?con & SLIGHT|HIGH) (reason $?r))
 =>
     (assert (judged ?student ?skill exclude-concern--low-count))
@@ -683,7 +767,7 @@
         (concern UNDEFINED)
         (reason
             (create$
-				?*exclude-concern--low-count--explanation* " (see " ?ref ")" crlf
+				?*exclude-concern--low-count--explanation* crlf
 				crlf
 				(if (eq ?con HIGH) then ?*initially-high* else ?*initially-slight*) crlf
 				$?r
@@ -697,7 +781,7 @@
 ;;;
 ;;;
 (defglobal ?*no-skill-description--explanation* =
-    (create$ reg "  The requirements for this skill are unknown.")
+    (create$ reg "  The requirements for this skill are " warn "unknown" reg ".")
 )
 
 (defrule j--no-skill-description
@@ -712,6 +796,7 @@
         (judgement
             (student-ID ?student)
             (skill-ID ?skill)
+			(concern UNDEFINED)
             (reason
                 (create$
                     ?*no-skill-description--explanation* crlf
@@ -742,6 +827,7 @@
         (judgement
             (student-ID ?student)
             (skill-ID ?skill)
+			(concern UNDEFINED)
             (reason
                 (create$
                     ?*no-other-applicable-judgement-rule--explanation* crlf

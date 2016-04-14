@@ -12,7 +12,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -152,17 +151,17 @@ public class Diagnostics extends JFrame implements ActionListener
 		));
 	}
 
-	private void addCheerfulIcon(JPanel parent) {
-		JLabel iconLabel = new JLabel();
-		URL imageURL = getClass().getClassLoader()
-		                         .getResource("org/reasoningmind/diagnostics/resources/data_input_label.png");
-
-		if (imageURL != null) {
-			iconLabel.setIcon(new ImageIcon(imageURL));
-
-			parent.add(iconLabel, BorderLayout.SOUTH);
-		}
-	}
+//	private void addCheerfulIcon(JPanel parent) {
+//		JLabel iconLabel = new JLabel();
+//		URL imageURL = getClass().getClassLoader()
+//		                         .getResource("org/reasoningmind/diagnostics/resources/data_input_label.png");
+//
+//		if (imageURL != null) {
+//			iconLabel.setIcon(new ImageIcon(imageURL));
+//
+//			parent.add(iconLabel, BorderLayout.SOUTH);
+//		}
+//	}
 
 	// Parts of user interface
 //	private JTextField factFilterTF;
@@ -252,7 +251,7 @@ public class Diagnostics extends JFrame implements ActionListener
 	private static final String STYLE_INFO = "info";
 	private static final String STYLE_WARNING = "warning";
 	private static final String STYLE_ERROR = "error";
-	private static final String MY_ORANGE = "0x7F6600";
+	private static final String MY_ORANGE = "0xD88844";
 	private static final String MY_GREEN = "0x007F00";
 
 	private void defineOutputStyles(StyleContext styleContext) {
@@ -261,6 +260,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		defaultStyle.addAttribute(StyleConstants.FontSize, 12);
 
 		final Style boldStyle = styleContext.addStyle(STYLE_BOLD, defaultStyle);
+		boldStyle.addAttribute(StyleConstants.Italic, true);
 		boldStyle.addAttribute(StyleConstants.Bold, true);
 
 		final Style errorStyle = styleContext.addStyle(STYLE_ERROR, boldStyle);
@@ -272,7 +272,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		final Style niceStyle = styleContext.addStyle(STYLE_NICE, boldStyle);
 		niceStyle.addAttribute(StyleConstants.Foreground, Color.decode(MY_GREEN));
 
-		final Style infoStyle = styleContext.addStyle(STYLE_INFO, defaultStyle);
+		final Style infoStyle = styleContext.addStyle(STYLE_INFO, boldStyle);
 //		infoStyle.addAttribute(StyleConstants.Italic, true);
 		infoStyle.addAttribute(StyleConstants.Foreground, Color.BLUE);
 	}
@@ -309,7 +309,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		selectorsPanel.add(runButton);
 
 		studentSelectionPanel.add(selectorsPanel, BorderLayout.NORTH);
-		addCheerfulIcon(studentSelectionPanel);
+//		addCheerfulIcon(studentSelectionPanel);
 
 		this.add(studentSelectionPanel, BorderLayout.WEST);
 	}
@@ -362,7 +362,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		String res = "";
 
 		// Checking if the primitive value is a multi-filed value
-		if (pv instanceof  MultifieldValue) {
+		if (pv instanceof MultifieldValue) {
 			MultifieldValue mv = (MultifieldValue) pv;
 			for (int i = 0; i < mv.size(); i++) {
 				res += mv.get(i).toString() + "\n";
@@ -449,12 +449,12 @@ public class Diagnostics extends JFrame implements ActionListener
 			                                 level < 0.6 ?"F"
 			                                             :level < 0.7 ?"D"
 			                                                          :level < 0.8 ?"C"
-			                                                                        :level < 0.9 ?"B"
-			                                                                                      :"A",
+			                                                                       :level < 0.9 ?"B"
+			                                                                                    :"A",
 			                                 trend < -0.05 ?"DOWN"
 			                                               :trend <= 0.05 ?"EVEN"
 			                                                              :"UP",
-			                                 skillHistory.size()
+			                                 skillHistory.recentPureOutcomesSize()
 			                   )
 			);
 		}
@@ -556,20 +556,34 @@ public class Diagnostics extends JFrame implements ActionListener
 
 			Set<StudentHistory.RecordKey> responses = skillHistory.descendingKeySet();
 
-			final String[] OUTCOME = {"F    ", "pass ", "F*   "};
+			final String[] OUTCOME = {"fail ", "pass ", "fail*"};
 			boolean showDetails = this.showDetailsCheckbox.isSelected();
 
 			for (StudentHistory.RecordKey
 					response : responses) {
+				int outcome = skillHistory.get(response).getOutcome();
 
-				printToOutput(String.format((showDetails ?"          " + response.getQuestionID() + "\n" :"") +
-				                            "          %s -> %1.3f    %s\n",
-				                            OUTCOME[skillHistory.get(response).getOutcome()],
+				if (showDetails) {
+
+					printToOutput("          " + response.getQuestionID() + "\n", STYLE_DEFAULT);
+					printToOutput(skillHistory.get(response).numberOfOtherSkills() > 0
+					              ?"                            additional skills:\n"
+					              :"", STYLE_INFO);
+				}
+
+				printToOutput(String.format("          %s", OUTCOME[outcome]),
+				              outcome == StudentHistory.SkillHistory.PASS
+				              ?STYLE_NICE
+				              :outcome == StudentHistory.SkillHistory.FAIL_A_SINGLE_SKILL
+				               ?STYLE_ERROR
+				               :STYLE_WARNING);
+
+				printToOutput(String.format(" -> %1.3f    %s\n",
 				                            skillHistory.getSkillLevel(response),
 				                            showDetails ?skillHistory.get(response).printOtherSkills() :""),
 				              STYLE_DEFAULT);
 			}
-			printToOutput(String.format("                      TREND=%1.3f\n" + (showDetails ?"\n\n" :""),
+			printToOutput(String.format("           TREND =% 1.3f\n" + (showDetails ?"\n\n" :""),
 			                            skillHistory.trend()),
 			              STYLE_DEFAULT);
 

@@ -72,6 +72,12 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 	}
 
 
+
+
+	/**************/
+	/* Record Key */
+	/**************/
+
 	/**
 	 * {@code RecordKey} is used as an identifier for a {@link Record Record} in a {@link
 	 * SkillHistory SkillHistory} of a
@@ -149,6 +155,12 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 	}
 
 
+
+
+	/**********/
+	/* Record */
+	/**********/
+
 	/**
 	 * Contains information about a single student response and the weight of the response for the purposes of skill
 	 * level estimation.
@@ -198,8 +210,18 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 
 			return res;
 		}
+
+		int numberOfOtherSkills() {
+			return otherSkills.size();
+		}
 	}
 
+
+
+
+	/*****************/
+	/* Skill History */
+	/*****************/
 
 	/**
 	 * Contains the history of a single skill for a given student and the current estimated level.
@@ -392,10 +414,39 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 //			                               :totRecOutcomes/totRecWeight));
 //		}
 
+		int recentPureOutcomesSize() {
+			int count = 0;
+			Iterator<RecordKey> records = keySet().iterator();
+
+			while(records.hasNext() && count < TREND_LOOKUP_DEPTH){
+				RecordKey record = records.next();
+
+				if (get(record).getOutcome() != FAIL_MULTIPLE_SKILLS) {
+					count++;
+				}
+			}
+
+			return count;
+		}
+
+		private RecordKey ceilingPureOutcome(RecordKey key) {
+			if(key == null) {
+				return null;
+			}
+
+			for (RecordKey record : tailMap(key).keySet()) {
+				if (get(record).getOutcome() != FAIL_MULTIPLE_SKILLS) {
+					return record;
+				}
+			}
+
+			return null;
+		}
+
 		private static final int TREND_LOOKUP_DEPTH = 10;
 
 		/**
-		 * Calculates the trend in the skill level.
+		 * Calculates the trend in the skill level using a linear regression.
 		 *
 		 * @return skill level trend
 		 */
@@ -406,17 +457,19 @@ class StudentHistory extends HashMap<String, StudentHistory.SkillHistory>
 
 			// Using the Normal Equation for linear regressions
 
+			int outcomesCount = recentPureOutcomesSize();
 			SimpleMatrix
 					// The matrix of columns, (1, i)
-					X = new SimpleMatrix(2, size() > TREND_LOOKUP_DEPTH ?TREND_LOOKUP_DEPTH :size()),
+//					X = new SimpleMatrix(2, size() > TREND_LOOKUP_DEPTH ?TREND_LOOKUP_DEPTH :size()),
+					X = new SimpleMatrix(2, outcomesCount > TREND_LOOKUP_DEPTH ?TREND_LOOKUP_DEPTH :outcomesCount),
 
 					// The vector of values, skillLevel(i)
 					y = new SimpleMatrix(X.numCols(), 1);
 
-			RecordKey k = firstKey();
+			RecordKey k = ceilingPureOutcome(firstKey());
 
 			// Initializing the matrices using the last #TREND_LOOKUP_DEPTH records
-			for (int i = y.numRows() - 1; i >= 0; i--, k = higherKey(k)) {
+			for (int i = y.numRows() - 1; i >= 0; i--, k = ceilingPureOutcome(higherKey(k))) {
 				X.set(0, i, 1);
 				X.set(1, i, i);
 				y.set(i, 0, get(k).getLevel());

@@ -142,7 +142,7 @@
 	(slot concern
 		(type SYMBOL)
 		(allowed-symbols NO SLIGHT HIGH UNDEFINED)
-		(default UNDEFINED)
+		(default ?NONE)
 	)
 	
 	; 
@@ -174,5 +174,20 @@
 		)
 		
 		(bind $?multi (rest$ $?multi))
+	)
+)
+
+(defgeneric xor)
+
+(defmethod xor (
+			(?a SYMBOL (not (neq ?a TRUE FALSE)))
+			(?b SYMBOL (not (neq ?b TRUE FALSE)))
+		)
+	
+	(if (eq ?a ?b)
+	 then
+		(return FALSE)
+	 else
+		(return TRUE)
 	)
 )
