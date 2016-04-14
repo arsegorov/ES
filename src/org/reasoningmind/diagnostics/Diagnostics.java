@@ -12,6 +12,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -21,18 +22,9 @@ import java.util.concurrent.ConcurrentSkipListSet;
  */
 public class Diagnostics extends JFrame implements ActionListener
 {
-	// Data handlers
-	// Need only one of each for the life of the application
-	private final JFileChooser fileChooser = new JFileChooser();
-
-	// Application text resources
+	// Different static Strings, mainly UI-related
 	private static ResourceBundle resources;
 
-	ResourceBundle getResources() {
-		return resources;
-	}
-
-	// CLIPS execution-related fields
 	/**
 	 * @apiNote Make sure to specify {@code -Djava.library.path="<path to CLIPSJNI directory>"}.
 	 * This is where the CLIPSJNI.dll is.
@@ -40,29 +32,30 @@ public class Diagnostics extends JFrame implements ActionListener
 	 */
 	private Environment clips;
 
-	Environment getClips() {
-		return clips;
-	}
 
-	private final StudentDataManager dataManager = new StudentDataManager();
-
-	// ============
-	// Constructors
-	// ============
+/*******************/
+/* The constructor */
+/*******************/
 
 	/**
 	 * The default constructor that sets up the main window of the application and creates a CLIPS environment with the
 	 * diagnostics' "defrules" and "deftemplates" loaded from the resources.
 	 */
 	private Diagnostics() {
+
 		// Accessing the resources file
 		if (!loadResources()) {
+			JOptionPane.showMessageDialog(this,
+			                              "Unable to load the resources.",
+			                              "Error",
+			                              JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 
-		/******************************/
-		/* Setting up the main window */
-		/******************************/
+	/*############################*/
+	/* Setting up the main window */
+	/*############################*/
+
 		this.setTitle(resources.getString("MainWindow-Title"));
 		this.getContentPane().setLayout(new BorderLayout());
 		this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -78,8 +71,8 @@ public class Diagnostics extends JFrame implements ActionListener
 		// The input file selection area
 		this.addFileSelectionPanel();
 
+		// The student data selection area
 		this.addStudentSelectionPanel();
-		studentSelector.setModel(new DefaultComboBoxModel<>(new String[]{""}));
 
 		// Setting up the final layout and location
 		this.pack();
@@ -87,15 +80,17 @@ public class Diagnostics extends JFrame implements ActionListener
 		this.setVisible(true);
 
 
-		/********************************************/
-		/* Loading the data from the local database */
-		/********************************************/
-		resetData();
+	/*##########################################*/
+	/* Loading the data from the local database */
+	/*##########################################*/
+
+		refreshStudentData();
 
 
-		/*************************************/
-		/* Starting up the CLIPS environment */
-		/*************************************/
+	/*###################################*/
+	/* Starting up the CLIPS environment */
+	/*###################################*/
+
 		clips = new Environment();
 
 		// This is needed for getting CLIPS output to the main window
@@ -105,28 +100,17 @@ public class Diagnostics extends JFrame implements ActionListener
 		clips.loadFromResource(resources.getString("CLIPS-SkillsData"));
 		clips.loadFromResource(resources.getString("CLIPS-Rules"));
 
+
+	/*################*/
+	/* Initial output */
+	/*################*/
+
 		printToOutput(Environment.getVersion(), STYLE_INFO);
 		printToOutput("\n\n" + resources.getString("CLIPS-Prompt"), STYLE_DEFAULT);
 	}
 
-	private void printToOutput(String printString, String style) {
-		try {
-			output.insertString(output.getLength(), printString,
-			                    output.getStyle(style));// append(printString);
-		}
-		catch (BadLocationException ble) {
-			System.out.println("Couldn't print to outputArea");
-		}
-	}
-
-	private void resetData() {
-		dataManager.fetchStudentsAndQuestions(this);
-
-		studentSelector.setModel(new DefaultComboBoxModel<>(new Vector<>(dataManager.getStudentIDs())));
-		studentSelector.insertItemAt("", 0);
-		studentSelector.setSelectedIndex(0);
-
-		skillSelector.setModel(new DefaultComboBoxModel<>(new String[]{""}));
+	Environment getClips() {
+		return clips;
 	}
 
 	private boolean loadResources() {
@@ -144,45 +128,14 @@ public class Diagnostics extends JFrame implements ActionListener
 		return true;
 	}
 
-	private static void addBorder(JPanel panel, String resourceID) {
-		panel.setBorder(BorderFactory.createTitledBorder(
-				BorderFactory.createEtchedBorder(),
-				resources.getString(resourceID)
-		));
+	ResourceBundle getResources() {
+		return resources;
 	}
 
-//	private void addCheerfulIcon(JPanel parent) {
-//		JLabel iconLabel = new JLabel();
-//		URL imageURL = getClass().getClassLoader()
-//		                         .getResource("org/reasoningmind/diagnostics/resources/data_input_label.png");
-//
-//		if (imageURL != null) {
-//			iconLabel.setIcon(new ImageIcon(imageURL));
-//
-//			parent.add(iconLabel, BorderLayout.SOUTH);
-//		}
-//	}
 
-	// Parts of user interface
-//	private JTextField factFilterTF;
-
-//	private void addFilterPanel() {
-//		JPanel filterPanel = new JPanel(new BorderLayout());
-//		addBorder(filterPanel, "MainWindowFilterAreaTitle");
-//
-//		// Filter definition text field
-//		factFilterTF = new JTextField("");
-//		factFilterTF.addActionListener(this);
-//		filterPanel.add(factFilterTF, BorderLayout.CENTER);
-//
-//		// Filter run button
-//		JButton showFacts = new JButton("Show Facts");
-//		showFacts.setActionCommand("ShowFacts");
-//		showFacts.addActionListener(this);
-//		filterPanel.add(showFacts, BorderLayout.EAST);
-//
-//		this.add(filterPanel, BorderLayout.SOUTH);
-//	}
+/*********************************/
+/* Methods for setting up the UI */
+/*********************************/
 
 	private JTextField filePathTF;
 
@@ -277,6 +230,16 @@ public class Diagnostics extends JFrame implements ActionListener
 		infoStyle.addAttribute(StyleConstants.Foreground, Color.BLUE);
 	}
 
+	private void printToOutput(String printString, String style) {
+		try {
+			output.insertString(output.getLength(), printString,
+			                    output.getStyle(style));// append(printString);
+		}
+		catch (BadLocationException ble) {
+			System.out.println("Couldn't print to outputArea");
+		}
+	}
+
 	private JComboBox<String> studentSelector;
 	private JComboBox<String> skillSelector;
 	private JCheckBox showDetailsCheckbox;
@@ -291,6 +254,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		studentSelector.addActionListener(this);
 		studentSelector.setEditable(false);
 		studentSelector.setPreferredSize(new Dimension(200, 24));
+		studentSelector.setModel(new DefaultComboBoxModel<>(new String[]{""}));
 		selectorsPanel.add(studentSelector);
 
 		skillSelector = new JComboBox<>();
@@ -309,15 +273,34 @@ public class Diagnostics extends JFrame implements ActionListener
 		selectorsPanel.add(runButton);
 
 		studentSelectionPanel.add(selectorsPanel, BorderLayout.NORTH);
-//		addCheerfulIcon(studentSelectionPanel);
+		addCheerfulIcon(studentSelectionPanel);
 
 		this.add(studentSelectionPanel, BorderLayout.WEST);
 	}
 
+	private void addCheerfulIcon(JPanel parent) {
+		JLabel iconLabel = new JLabel();
+		URL imageURL = getClass().getClassLoader()
+		                         .getResource("org/reasoningmind/diagnostics/resources/data_input_label.png");
 
-	// =======
-	// Methods
-	// =======
+		if (imageURL != null) {
+			iconLabel.setIcon(new ImageIcon(imageURL));
+
+			parent.add(iconLabel, BorderLayout.SOUTH);
+		}
+	}
+
+	private static void addBorder(JPanel panel, String resourceID) {
+		panel.setBorder(BorderFactory.createTitledBorder(
+				BorderFactory.createEtchedBorder(),
+				resources.getString(resourceID)
+		));
+	}
+
+
+/*********************************/
+/*             Main              */
+/*********************************/
 
 	/**
 	 * Creates the main window of the application.
@@ -331,6 +314,10 @@ public class Diagnostics extends JFrame implements ActionListener
 		);
 	}
 
+
+/****************************************/
+/* Methods for communicating with CLIPS */
+/****************************************/
 
 	/**
 	 * This is a convenience method. It passes the {@code expression} onto the
@@ -387,7 +374,8 @@ public class Diagnostics extends JFrame implements ActionListener
 	private boolean clipsIsRunning = false;
 
 	/**
-	 * Invokes the {@code (run)} command in the CLIPS environment in a separate thread.
+	 * Initializes CLIPS with student data and invokes the CLIPS
+	 * {@code (run)} command in a separate thread.
 	 */
 	private void runDiagnostics() {
 		Runnable runThread =
@@ -461,6 +449,26 @@ public class Diagnostics extends JFrame implements ActionListener
 	}
 
 
+/******************/
+/* Data retrieval */
+/******************/
+
+	private final StudentDataManager dataManager = new StudentDataManager();
+
+	private void refreshStudentData() {
+		dataManager.fetchStudentsAndQuestions(this);
+
+		studentSelector.setModel(new DefaultComboBoxModel<>(new Vector<>(dataManager.getStudentIDs())));
+		studentSelector.insertItemAt("", 0);
+		studentSelector.setSelectedIndex(0);
+
+		skillSelector.setModel(new DefaultComboBoxModel<>(new String[]{""}));
+	}
+
+
+/***********************/
+/* UI listener actions */
+/***********************/
 	private boolean studentStats = false;
 
 	/**
@@ -498,13 +506,9 @@ public class Diagnostics extends JFrame implements ActionListener
 				filePathTF.setText(file.getPath());
 
 				dataManager.loadCSV(file);
-				resetData();
+				refreshStudentData();
 			}
 		}
-//		else if (e.getActionCommand().equals("ShowFacts")
-//		         || e.getSource() == factFilterTF) {
-//			showFacts();
-//		}
 		else if (e.getSource() == clipsCommandTF) {
 			executeClipsCommand();
 		}
@@ -607,33 +611,9 @@ public class Diagnostics extends JFrame implements ActionListener
 		clips.printBanner();
 	}
 
-//	private void showFacts() {
-//		MultifieldValue mv = (MultifieldValue) clips.eval("(find-fact " + factFilterTF.getText() + ")");
-//		if (mv.size() == 0) {
-//			JOptionPane.showMessageDialog(this,
-//			                              "There are no facts that match the query:\n" + factFilterTF.getText(),
-//			                              "Facts not found",
-//			                              JOptionPane.INFORMATION_MESSAGE);
-//			return;
-//		}
-//
-//		new FactsFrame(this, factFilterTF.getText());
-//	}
-
-//	private void loadCLPFromPath() {
-//		File file = new File(filePathTF.getText());
-//
-//		if (file.exists()) {
-//			eval("(load \"" + filePathTF.getText() + "\")");
-//			clips.reset();
-//		}
-//		else {
-//			JOptionPane.showMessageDialog(this,
-//			                              "Specified file doesn't exist.",
-//			                              "Error",
-//			                              JOptionPane.ERROR_MESSAGE);
-//		}
-//	}
+	// Data handlers
+	// Need only one of each for the life of the application
+	private final JFileChooser fileChooser = new JFileChooser();
 
 	private int browseAndLoad(String fileDescription, String fileExt) {
 		// The file filter used for browsing the system for input file
@@ -643,16 +623,14 @@ public class Diagnostics extends JFrame implements ActionListener
 		return fileChooser.showOpenDialog(this);
 	}
 
-//	private class MyOutputStream extends OutputStream
-//	{
-//		@Override
-//		public void write(int b) throws IOException {
-//			printToOutput("" + (char) b, STYLE_INFO);
-//		}
-//	}
+
+/*************************/
+/* Router implementation */
+/*************************/
 
 	/**
-	 * An implementation of the Router interface that is needed for routing CLIPS output to this application.
+	 * An implementation of the Router interface that is needed
+	 * for routing CLIPS output to this application.
 	 */
 	private class OutputRouter implements Router
 	{

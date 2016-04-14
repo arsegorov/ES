@@ -22,9 +22,14 @@ class StudentDataManager
 		extends HashMap<String, StudentHistory>
 {
 	private Vector<String> studentIDs;
+	Vector<String> getStudentIDs() {
+		return studentIDs;
+	}
+
 	private Vector<String> questionIDs;
 	private HashMap<String, Integer> lastLesson;
 	private HashMap<String, Vector<String>> questionSkills;
+
 
 	void loadCSV(File csv) {
 		try {
@@ -63,6 +68,31 @@ class StudentDataManager
 		}
 		catch (IOException | ClassNotFoundException | SQLException e) {
 			e.printStackTrace();
+		}
+	}
+
+
+	void fetchStudentsAndQuestions(Diagnostics host) {
+		studentIDs = new Vector<>();
+		questionIDs = new Vector<>();
+		questionSkills = new HashMap<>();
+
+		try {
+			lookupStudentIDs();
+			lookupQuestions();
+		}
+		catch (ClassNotFoundException cnfe) {
+			cnfe.printStackTrace();
+		}
+		catch (SQLException sqle) {
+			JOptionPane.showMessageDialog(host,
+			                              Locale.getDefault().equals(new Locale("ru", "RU"))
+			                              ?"Данные об учениках не загружены."
+			                              :"The student data has not been loaded.",
+			                              Locale.getDefault().equals(new Locale("ru", "RU")) ?"Нет данных" :"No data",
+			                              JOptionPane.WARNING_MESSAGE);
+
+			host.actionPerformed(new ActionEvent(this, 0, "BrowseCSV"));
 		}
 	}
 
@@ -127,49 +157,6 @@ class StudentDataManager
 					skills.add(rs.getString(1));
 				}
 			}
-		}
-	}
-
-	Vector<String> getStudentIDs() {
-		return studentIDs;
-	}
-
-//	Vector<String> getQuestionIDs() {
-//		return questionIDs;
-//	}
-//
-//	Vector<String> getQuestionSkills(String questionID) {
-//		if (questionID != null && questionSkills != null) {
-//			return questionSkills.get(questionID);
-//		}
-//		else {
-//			System.out.println(
-//					"Question skills are missing for " + (questionID != null ?"\"" + questionID + "\"" :"NULL"));
-//			return null;
-//		}
-//	}
-
-	void fetchStudentsAndQuestions(Diagnostics host) {
-		studentIDs = new Vector<>();
-		questionIDs = new Vector<>();
-		questionSkills = new HashMap<>();
-
-		try {
-			lookupStudentIDs();
-			lookupQuestions();
-		}
-		catch (ClassNotFoundException cnfe) {
-			cnfe.printStackTrace();
-		}
-		catch (SQLException sqle) {
-			JOptionPane.showMessageDialog(host,
-			                              Locale.getDefault().equals(new Locale("ru", "RU"))
-			                              ?"Данные об учениках не загружены."
-			                              :"The student data has not been loaded.",
-			                              Locale.getDefault().equals(new Locale("ru", "RU")) ?"Нет данных" :"No data",
-			                              JOptionPane.WARNING_MESSAGE);
-
-			host.actionPerformed(new ActionEvent(this, 0, "BrowseCSV"));
 		}
 	}
 
