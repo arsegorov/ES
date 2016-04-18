@@ -30,7 +30,9 @@ public class Diagnostics extends JFrame implements ActionListener
 	 * This is where the CLIPSJNI.dll is.
 	 * In IntelliJ Idea, the option is specified under VM Options in "Run/Debug Configurations"
 	 */
-	private Environment clips;
+	private static Environment clips;
+
+	private static OutputRouter router;
 
 
 /*******************/
@@ -93,8 +95,9 @@ public class Diagnostics extends JFrame implements ActionListener
 
 		clips = new Environment();
 
-		// This is needed for getting CLIPS output to the main window
-		clips.addRouter(new OutputRouter());
+		// This is needed for getting CLIPS routerOutput to the main window
+		router = new OutputRouter(output);
+		clips.addRouter(router);
 
 		clips.loadFromResource(resources.getString("CLIPS-Definitions"));
 		clips.loadFromResource(resources.getString("CLIPS-SkillsData"));
@@ -105,8 +108,8 @@ public class Diagnostics extends JFrame implements ActionListener
 	/* Initial output */
 	/*################*/
 
-		printToOutput(Environment.getVersion(), STYLE_INFO);
-		printToOutput("\n\n" + resources.getString("CLIPS-Prompt"), STYLE_DEFAULT);
+		printToOutput(Environment.getVersion(), output, STYLE_INFO);
+		printToOutput("\n\n" + resources.getString("CLIPS-Prompt"), output, STYLE_DEFAULT);
 	}
 
 	Environment getClips() {
@@ -130,6 +133,10 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	ResourceBundle getResources() {
 		return resources;
+	}
+
+	OutputRouter getRouter() {
+		return router;
 	}
 
 
@@ -158,7 +165,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		this.add(fileSelectionPanel, BorderLayout.NORTH);
 	}
 
-	private JTextField clipsCommandTF;
+	//	private JTextField clipsCommandTF;
 	private JTextPane outputArea;
 	private StyledDocument output;
 
@@ -172,7 +179,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		output = new DefaultStyledDocument(styleContext);
 		outputArea = new JTextPane(output);
 
-		// note: this line should remain after the line "new outputArea = JTextPane(output);"
+		// note: this line should remain after the line "new outputArea = JTextPane(routerOutput);"
 		// otherwise, the FontFamily = "monospaced" in defineOutputStyles() doesn't appear to work
 		defineOutputStyles(styleContext);
 
@@ -183,22 +190,10 @@ public class Diagnostics extends JFrame implements ActionListener
 		JScrollPane outputScrollPane = new JScrollPane(outputArea);
 		clipsPanel.add(outputScrollPane, BorderLayout.CENTER);
 
-		// The input line
-		JPanel promptPanel = new JPanel(new BorderLayout());
-		addBorder(promptPanel, "MainWindow-CLIPSArea-Title");
-
-		clipsCommandTF = new JTextField("");
-		clipsCommandTF.setPreferredSize(new Dimension(outputArea.getWidth(), 24));
-		clipsCommandTF.setFont(Font.decode("Consolas-Plain-12"));
-		clipsCommandTF.addActionListener(this);
-		promptPanel.add(clipsCommandTF, BorderLayout.CENTER);
-
-		clipsPanel.add(promptPanel, BorderLayout.SOUTH);
-
 		parent.add(clipsPanel, BorderLayout.CENTER);
 	}
 
-	private static final String STYLE_DEFAULT = "default";
+	static final String STYLE_DEFAULT = "default";
 	private static final String STYLE_BOLD = "bold";
 	private static final String STYLE_NICE = "nice";
 	private static final String STYLE_INFO = "info";
@@ -207,7 +202,7 @@ public class Diagnostics extends JFrame implements ActionListener
 	private static final String MY_ORANGE = "0xD88844";
 	private static final String MY_GREEN = "0x007F00";
 
-	private void defineOutputStyles(StyleContext styleContext) {
+	static void defineOutputStyles(StyleContext styleContext) {
 		final Style defaultStyle = styleContext.addStyle(STYLE_DEFAULT, null);
 		defaultStyle.addAttribute(StyleConstants.FontFamily, "Courier New");
 		defaultStyle.addAttribute(StyleConstants.FontSize, 12);
@@ -226,17 +221,15 @@ public class Diagnostics extends JFrame implements ActionListener
 		niceStyle.addAttribute(StyleConstants.Foreground, Color.decode(MY_GREEN));
 
 		final Style infoStyle = styleContext.addStyle(STYLE_INFO, boldStyle);
-//		infoStyle.addAttribute(StyleConstants.Italic, true);
 		infoStyle.addAttribute(StyleConstants.Foreground, Color.BLUE);
 	}
 
-	private void printToOutput(String printString, String style) {
+	static void printToOutput(String printString, StyledDocument output, String style) {
 		try {
-			output.insertString(output.getLength(), printString,
-			                    output.getStyle(style));// append(printString);
+			output.insertString(output.getLength(), printString, output.getStyle(style));
 		}
 		catch (BadLocationException ble) {
-			System.out.println("Couldn't print to outputArea");
+			System.out.println("Couldn't print to the output area.");
 		}
 	}
 
@@ -290,7 +283,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		}
 	}
 
-	private static void addBorder(JPanel panel, String resourceID) {
+	static void addBorder(JPanel panel, String resourceID) {
 		panel.setBorder(BorderFactory.createTitledBorder(
 				BorderFactory.createEtchedBorder(),
 				resources.getString(resourceID)
@@ -333,19 +326,19 @@ public class Diagnostics extends JFrame implements ActionListener
 	 * @see net.sf.clipsrules.jni.Environment#eval(String)
 	 */
 	private PrimitiveValue eval(String expression) {
-		printToOutput(expression + "\n\n", STYLE_DEFAULT);
+		printToOutput(expression + "\n\n", output, STYLE_DEFAULT);
 
 		// Escaping the back slashes in the expression before passing the string to the environment
 		// (each '\' should be changed to "\\"),
 		// then running CLIPS and getting the result
 		PrimitiveValue res = clips.eval(expression.replace("\\", "\\\\"));
 
-		printToOutput(printPrimitiveValue(res), STYLE_DEFAULT);
+		printToOutput(printPrimitiveValue(res), output, STYLE_DEFAULT);
 
 		return res;
 	}
 
-	private String printPrimitiveValue(PrimitiveValue pv) {
+	static String printPrimitiveValue(PrimitiveValue pv) {
 		String res = "";
 
 		// Checking if the primitive value is a multi-filed value
@@ -380,29 +373,35 @@ public class Diagnostics extends JFrame implements ActionListener
 	private void runDiagnostics() {
 		Runnable runThread =
 				() -> {
+					initializeClips();
 					clips.run();
 
 					SwingUtilities.invokeLater(
 							() -> {
-								printToOutput(resources.getString("CLIPS-Prompt"), STYLE_DEFAULT);
 								clipsIsRunning = false;
 
 								filePathTF.setEnabled(true);
-								clipsCommandTF.setEnabled(true);
+								studentSelector.setEnabled(true);
+								skillSelector.setEnabled(true);
+								showDetailsCheckbox.setEnabled(true);
 								setCursor(Cursor.getDefaultCursor());
+
+								router.setOutput(output);
 							}
 					);
 				};
 
-		outputArea.setText("\nDiagnostics for " + studentSelector.getSelectedItem() + "\n\n");
-		initializeClips();
 		clipsIsRunning = true;
 
 		filePathTF.setEnabled(false);
-		clipsCommandTF.setEnabled(false);
+		studentSelector.setEnabled(false);
+		skillSelector.setEnabled(false);
+		showDetailsCheckbox.setEnabled(false);
 
 		Thread executionThread = new Thread(runThread);
 		setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+		new OutputFrame((String) studentSelector.getSelectedItem(), this);
 		executionThread.start();
 	}
 
@@ -469,7 +468,6 @@ public class Diagnostics extends JFrame implements ActionListener
 /***********************/
 /* UI listener actions */
 /***********************/
-	private boolean studentStats = false;
 
 	/**
 	 * This method is inherited from the ActionListener interface, and is invoked whenever a registered event occurs.
@@ -485,8 +483,8 @@ public class Diagnostics extends JFrame implements ActionListener
 
 		if (e.getActionCommand().equals(resources.getString("CLIPS-LoadingCommand"))) {
 
-			if (browseAndLoad(resources.getString("CLIPS-FileDescription"),
-			                  resources.getString("CLIPS-FileExt"))
+			if (selectFile(resources.getString("CLIPS-FileDescription"),
+			               resources.getString("CLIPS-FileExt"))
 			    == JFileChooser.APPROVE_OPTION) {
 
 				File file = fileChooser.getSelectedFile();
@@ -498,8 +496,8 @@ public class Diagnostics extends JFrame implements ActionListener
 		}
 		else if (e.getActionCommand().equals(resources.getString("CSV-LoadingCommand"))) {
 
-			if (browseAndLoad(resources.getString("CSV-FileDescription"),
-			                  resources.getString("CSV-FileExt"))
+			if (selectFile(resources.getString("CSV-FileDescription"),
+			               resources.getString("CSV-FileExt"))
 			    == JFileChooser.APPROVE_OPTION) {
 
 				File file = fileChooser.getSelectedFile();
@@ -508,9 +506,6 @@ public class Diagnostics extends JFrame implements ActionListener
 				dataManager.loadCSV(file);
 				refreshStudentData();
 			}
-		}
-		else if (e.getSource() == clipsCommandTF) {
-			executeClipsCommand();
 		}
 		else if (e.getSource() == studentSelector
 		         || e.getSource() == skillSelector
@@ -529,13 +524,13 @@ public class Diagnostics extends JFrame implements ActionListener
 		}
 		String selectedSkill = (String) skillSelector.getSelectedItem();
 
-		studentStats = true;
+//		studentStats = true;
 
 		int lastLesson = dataManager.getLastLesson(studentID);
 		StudentHistory history = dataManager.getHistory(studentID);
 
 		outputArea.setText("\n");
-		printToOutput(studentID + "\nLast lesson: " + lastLesson + "\n\n", STYLE_DEFAULT);
+		printToOutput(studentID + "\nLast lesson: " + lastLesson + "\n\n", output, STYLE_DEFAULT);
 
 		Set<String> skills;
 		if (selectedSkill.equals("") || e.getSource() == studentSelector) {
@@ -555,7 +550,7 @@ public class Diagnostics extends JFrame implements ActionListener
 		for (String skill : skills) {
 			StudentHistory.SkillHistory skillHistory = history.get(skill);
 			printToOutput(String.format("  %s:\n",
-			                            skill.toUpperCase()),
+			                            skill.toUpperCase()), output,
 			              STYLE_INFO);
 
 			Set<StudentHistory.RecordKey> responses = skillHistory.descendingKeySet();
@@ -569,13 +564,13 @@ public class Diagnostics extends JFrame implements ActionListener
 
 				if (showDetails) {
 
-					printToOutput("          " + response.getQuestionID() + "\n", STYLE_DEFAULT);
+					printToOutput("          " + response.getQuestionID() + "\n", output, STYLE_DEFAULT);
 					printToOutput(skillHistory.get(response).numberOfOtherSkills() > 0
 					              ?"                            additional skills:\n"
-					              :"", STYLE_INFO);
+					              :"", output, STYLE_INFO);
 				}
 
-				printToOutput(String.format("          %s", OUTCOME[outcome]),
+				printToOutput(String.format("          %s", OUTCOME[outcome]), output,
 				              outcome == StudentHistory.SkillHistory.PASS
 				              ?STYLE_NICE
 				              :outcome == StudentHistory.SkillHistory.FAIL_A_SINGLE_SKILL
@@ -585,37 +580,23 @@ public class Diagnostics extends JFrame implements ActionListener
 				printToOutput(String.format(" -> %1.3f    %s\n",
 				                            skillHistory.getSkillLevel(response),
 				                            showDetails ?skillHistory.get(response).printOtherSkills() :""),
+				              output,
 				              STYLE_DEFAULT);
 			}
 			printToOutput(String.format("           TREND =% 1.3f\n" + (showDetails ?"\n\n" :""),
-			                            skillHistory.trend()),
+			                            skillHistory.trend()), output,
 			              STYLE_DEFAULT);
 
-			printToOutput("\n", STYLE_DEFAULT);
+			printToOutput("\n", output, STYLE_DEFAULT);
 		}
 
 		outputArea.setCaretPosition(0);
 	}
 
-	private void executeClipsCommand() {
-		if (studentStats) {
-			printToOutput(Environment.getVersion(), STYLE_INFO);
-			printToOutput("\n\n" + resources.getString("CLIPS-Prompt"), STYLE_DEFAULT);
-
-			studentStats = false;
-		}
-
-		eval(clipsCommandTF.getText());
-		outputArea.setCaretPosition(output.getLength());
-		clipsCommandTF.setText("");
-		clips.printBanner();
-	}
-
-	// Data handlers
 	// Need only one of each for the life of the application
 	private final JFileChooser fileChooser = new JFileChooser();
 
-	private int browseAndLoad(String fileDescription, String fileExt) {
+	private int selectFile(String fileDescription, String fileExt) {
 		// The file filter used for browsing the system for input file
 		FileNameExtensionFilter fnef = new FileNameExtensionFilter(fileDescription, fileExt);
 		fileChooser.setFileFilter(fnef);
@@ -630,10 +611,25 @@ public class Diagnostics extends JFrame implements ActionListener
 
 	/**
 	 * An implementation of the Router interface that is needed
-	 * for routing CLIPS output to this application.
+	 * for routing CLIPS routerOutput to this application.
 	 */
-	private class OutputRouter implements Router
+	class OutputRouter implements Router
 	{
+		private StyledDocument routerOutput;
+
+		OutputRouter(StyledDocument output) {
+			routerOutput = output;
+		}
+
+		void setOutput(StyledDocument output) {
+			routerOutput = output;
+		}
+
+		StyledDocument getOutput()
+		{
+			return routerOutput;
+		}
+
 		private static final String JAVA_REG = "java-reg";
 		private static final String JAVA_BOLD = "java-bold";
 		private static final String JAVA_NICE = "java-nice";
@@ -671,25 +667,25 @@ public class Diagnostics extends JFrame implements ActionListener
 		public void print(String routerName, String printString) {
 			switch (routerName) {
 			case JAVA_ERROR:
-				printToOutput(printString, STYLE_ERROR);
+				printToOutput(printString, routerOutput, STYLE_ERROR);
 				break;
 			case JAVA_WARNING:
 			case WTRACE:
-				printToOutput(printString, STYLE_WARNING);
+				printToOutput(printString, routerOutput, STYLE_WARNING);
 				break;
 			case JAVA_INFO:
 			case WDISPLAY:
 			case WPROMPT:
-				printToOutput(printString, STYLE_INFO);
+				printToOutput(printString, routerOutput, STYLE_INFO);
 				break;
 			case JAVA_NICE:
-				printToOutput(printString, STYLE_NICE);
+				printToOutput(printString, routerOutput, STYLE_NICE);
 				break;
 			case JAVA_BOLD:
-				printToOutput(printString, STYLE_BOLD);
+				printToOutput(printString, routerOutput, STYLE_BOLD);
 				break;
 			default:
-				printToOutput(printString, STYLE_DEFAULT);
+				printToOutput(printString, routerOutput, STYLE_DEFAULT);
 				break;
 			}
 		}

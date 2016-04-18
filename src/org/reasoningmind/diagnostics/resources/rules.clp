@@ -5,7 +5,7 @@
 ;;; These rules fire at the end, when all the judgement is done.
 ;;; We need separate rules to keep the output in the desired order
 ;;; The saliences are as follows:
-;;;   UNDEFINED 6: for debugging, will change later
+;;;   UNDEFINED 2: for debugging, change to 6
 ;;;   HIGH 5
 ;;;   SLIGHT 4
 ;;;   NO 3
@@ -16,6 +16,7 @@
 	""
 	(declare (salience 5))
 	
+	(output (student-ID ?st))
 	(judgement (student-ID ?st) (skill-ID ?sk) (concern HIGH) (reason $?r))
 =>
 	(print-to-java
@@ -32,6 +33,8 @@
 (defrule o--judgement-slight
 	""
 	(declare (salience 4))
+	
+	(output (student-ID ?st))
 	(judgement (student-ID ?st) (skill-ID ?sk) (concern SLIGHT) (reason $?r))
 =>
 	(print-to-java
@@ -48,6 +51,8 @@
 (defrule o--judgement-no
 	""
 	(declare (salience 3))
+	
+	(output (student-ID ?st))
 	(judgement (student-ID ?st) (skill-ID ?sk) (concern NO) (reason $?r))
 =>
 	(print-to-java
@@ -63,7 +68,9 @@
 ; When concern = UNDEFINED
 (defrule o--judgement-undefined
 	""
-	(declare (salience 6))
+	(declare (salience 2))
+	
+	(output (student-ID ?st))
 	(judgement (student-ID ?st) (skill-ID ?sk) (concern UNDEFINED) (reason $?r))
 =>
 	(print-to-java
@@ -846,4 +853,22 @@
     (not (skill (ID ?s)))
 =>
     (assert (skill (ID ?s) (first-lesson 0)))
+)
+
+
+;;;
+;;; Diagnostics is finished, and it's time to print the results
+;;;
+(defrule begin-output
+	""
+	(diagnose ?student)
+	(not
+		(and
+			(student-skill (student-ID ?student) (skill-ID ?skill))
+			(not (judgement (student-ID ?student) (skill-ID ?skill)))
+		)
+	)
+=>
+	(assert (output (student-ID ?student)))
+	;(print-to-java "" info "Diagnostics complete." crlf)
 )
